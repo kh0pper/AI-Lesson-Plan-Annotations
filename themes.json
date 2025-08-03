@@ -1,0 +1,138 @@
+{
+  "themes": {
+    "educational": {
+      "name": "Educational Psychology",
+      "description": "Color scheme based on educational psychology principles",
+      "colors": {
+        "engagement": [0.1, 0.7, 0.2],
+        "differentiation": [0.9, 0.5, 0.1],
+        "assessment": [0.5, 0.1, 0.8],
+        "improvement": [0.8, 0.1, 0.1],
+        "strength": [0.1, 0.4, 0.8],
+        "resource": [0.6, 0.6, 0.1],
+        "extension": [0.8, 0.1, 0.6],
+        "cultural": [0.1, 0.8, 0.6]
+      },
+      "category_definitions": {
+        "engagement": "Student participation opportunities and interactive elements",
+        "differentiation": "Strategies to support diverse learning needs",
+        "assessment": "Evaluation methods and formative feedback strategies", 
+        "improvement": "Areas needing attention or enhancement",
+        "strength": "Effective practices and successful elements",
+        "resource": "Materials, tools, and educational resources",
+        "extension": "Advanced activities for accelerated learners",
+        "cultural": "Cultural responsiveness and linguistic considerations"
+      }
+    },
+    "vibrant": {
+      "name": "Vibrant",
+      "description": "High-contrast colors for maximum visibility",
+      "colors": {
+        "engagement": [0.0, 0.8, 0.0],
+        "differentiation": [1.0, 0.4, 0.0],
+        "assessment": [0.6, 0.0, 1.0],
+        "improvement": [1.0, 0.0, 0.0],
+        "strength": [0.0, 0.3, 1.0],
+        "resource": [0.8, 0.8, 0.0],
+        "extension": [1.0, 0.0, 0.8],
+        "cultural": [0.0, 1.0, 0.8]
+      }
+    },
+    "pastel": {
+      "name": "Pastel",
+      "description": "Soft, gentle colors for easy reading",
+      "colors": {
+        "engagement": [0.6, 0.9, 0.6],
+        "differentiation": [1.0, 0.8, 0.6],
+        "assessment": [0.8, 0.6, 0.9],
+        "improvement": [0.9, 0.6, 0.6],
+        "strength": [0.6, 0.7, 0.9],
+        "resource": [0.9, 0.9, 0.6],
+        "extension": [0.9, 0.6, 0.8],
+        "cultural": [0.6, 0.9, 0.8]
+      }
+    },
+    "academic": {
+      "name": "Academic",
+      "description": "Professional academic color scheme",
+      "colors": {
+        "engagement": [0.2, 0.5, 0.2],
+        "differentiation": [0.6, 0.4, 0.1],
+        "assessment": [0.3, 0.1, 0.5],
+        "improvement": [0.5, 0.1, 0.1],
+        "strength": [0.1, 0.2, 0.5],
+        "resource": [0.4, 0.4, 0.1],
+        "extension": [0.5, 0.1, 0.4],
+        "cultural": [0.1, 0.5, 0.4]
+      }
+    },
+    "monochrome": {
+      "name": "Monochrome",
+      "description": "Grayscale theme for printing",
+      "colors": {
+        "engagement": [0.2, 0.2, 0.2],
+        "differentiation": [0.4, 0.4, 0.4],
+        "assessment": [0.6, 0.6, 0.6],
+        "improvement": [0.8, 0.8, 0.8],
+        "strength": [0.1, 0.1, 0.1],
+        "resource": [0.5, 0.5, 0.5],
+        "extension": [0.7, 0.7, 0.7],
+        "cultural": [0.3, 0.3, 0.3]
+      }
+    },
+    "warm": {
+      "name": "Warm Tones",
+      "description": "Warm, inviting color palette",
+      "colors": {
+        "engagement": [0.8, 0.6, 0.2],
+        "differentiation": [0.9, 0.4, 0.1],
+        "assessment": [0.7, 0.3, 0.5],
+        "improvement": [0.8, 0.2, 0.2],
+        "strength": [0.6, 0.4, 0.1],
+        "resource": [0.7, 0.5, 0.2],
+        "extension": [0.8, 0.3, 0.4],
+        "cultural": [0.7, 0.4, 0.3]
+      }
+    },
+    "cool": {
+      "name": "Cool Tones", 
+      "description": "Cool, calming color palette",
+      "colors": {
+        "engagement": [0.2, 0.6, 0.8],
+        "differentiation": [0.3, 0.5, 0.7],
+        "assessment": [0.4, 0.2, 0.8],
+        "improvement": [0.5, 0.3, 0.6],
+        "strength": [0.1, 0.4, 0.8],
+        "resource": [0.2, 0.7, 0.5],
+        "extension": [0.3, 0.2, 0.7],
+        "cultural": [0.1, 0.8, 0.6]
+      }
+    },
+    "custom": {
+      "name": "Custom User-Defined",
+      "description": "User-customizable color categories and meanings",
+      "colors": {
+        "category1": [0.8, 0.1, 0.1],
+        "category2": [0.1, 0.7, 0.2],
+        "category3": [0.1, 0.4, 0.8],
+        "category4": [0.9, 0.5, 0.1],
+        "category5": [0.5, 0.1, 0.8],
+        "category6": [0.6, 0.6, 0.1],
+        "category7": [0.8, 0.1, 0.6],
+        "category8": [0.1, 0.8, 0.6]
+      },
+      "category_definitions": {
+        "category1": "Critical Issues (Red)",
+        "category2": "Strengths & Successes (Green)",
+        "category3": "Student Engagement (Blue)",
+        "category4": "Teaching Strategies (Orange)",
+        "category5": "Assessment Methods (Purple)",
+        "category6": "Resources & Materials (Olive)",
+        "category7": "Extensions & Enrichment (Magenta)",
+        "category8": "Cultural Considerations (Teal)"
+      },
+      "user_customizable": true
+    }
+  },
+  "default_theme": "educational"
+}
