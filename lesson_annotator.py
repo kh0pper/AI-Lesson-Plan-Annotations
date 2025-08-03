@@ -4,8 +4,10 @@ from datetime import datetime
 from typing import Dict, Optional
 from pdf_extractor import PDFExtractor
 from llama_client import LlamaAIClient
+from enhanced_llama_client import EnhancedLlamaAIClient
 from annotation_parameters import ParameterPresets, parameters_to_dict
 from pdf_annotator import PDFAnnotationGenerator
+from inline_pdf_annotator import InlinePDFAnnotator
 
 
 class LessonPlanAnnotator:
@@ -15,6 +17,7 @@ class LessonPlanAnnotator:
         self.pdf_path = pdf_path
         self.pdf_extractor = PDFExtractor(pdf_path)
         self.ai_client = LlamaAIClient()
+        self.enhanced_ai_client = EnhancedLlamaAIClient()
         self.lesson_content = ""
         self.lesson_structure = {}
         self.annotations = {}
@@ -58,12 +61,18 @@ class LessonPlanAnnotator:
             # Save results
             self._save_results(result)
             
-            # Generate annotated PDF
-            print("📄 Creating annotated PDF...")
+            # Generate both traditional and inline annotated PDFs
+            print("📄 Creating annotated PDFs...")
             annotated_pdf = self._create_annotated_pdf(result)
+            inline_pdf = self._create_inline_annotated_pdf(result)
+            
             if annotated_pdf:
                 result["annotated_pdf"] = annotated_pdf
-                print(f"📑 Annotated PDF saved as: {annotated_pdf}")
+                print(f"📑 Traditional annotated PDF saved as: {annotated_pdf}")
+            
+            if inline_pdf:
+                result["inline_annotated_pdf"] = inline_pdf
+                print(f"📑 Inline annotated PDF saved as: {inline_pdf}")
             
             return result
         else:
@@ -129,6 +138,20 @@ class LessonPlanAnnotator:
             
         except Exception as e:
             print(f"Warning: Could not create annotated PDF: {e}")
+            return None
+    
+    def _create_inline_annotated_pdf(self, results: Dict) -> Optional[str]:
+        """Create inline annotated PDF with AI insights."""
+        try:
+            generator = InlinePDFAnnotator(self.pdf_path)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filename = f"inline_{os.path.basename(self.pdf_path).replace('.pdf', '')}_{timestamp}.pdf"
+            
+            inline_pdf = generator.create_inline_annotated_pdf(results, output_filename)
+            return inline_pdf
+            
+        except Exception as e:
+            print(f"Warning: Could not create inline annotated PDF: {e}")
             return None
     
     def get_lesson_summary(self) -> Dict:

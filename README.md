@@ -5,6 +5,8 @@ An intelligent web application that analyzes lesson plans using AI and provides 
 ## ✨ Features
 
 - **PDF Upload & Analysis**: Upload lesson plan PDFs and get AI-powered insights
+- **Inline Annotations** ⭐ **NEW**: Annotations placed directly alongside lesson content for immediate use
+- **Traditional Annotations**: Comprehensive analysis appended after the original lesson plan
 - **Customizable Parameters**: Choose from presets or create custom annotation guidelines
 - **Professional Output**: Generate annotated PDFs with detailed recommendations
 - **Web Interface**: User-friendly web application with real-time processing
@@ -58,8 +60,11 @@ Open your browser and go to: `http://localhost:5000`
 source venv/bin/activate
 python lesson_annotator.py
 
-# Create PDF from existing JSON results
+# Create traditional PDF from existing JSON results
 python create_pdf_from_json.py annotations_file.json
+
+# Create inline PDF from existing JSON results  
+python create_inline_pdf.py annotations_file.json
 ```
 
 ## 📁 Project Structure
@@ -116,9 +121,24 @@ ai-lesson-plan-annotate/
 
 The application generates:
 
-1. **Annotated PDF**: Original lesson plan + AI analysis
-2. **JSON Results**: Complete analysis data for future reference
-3. **Web Results**: Interactive results page with download links
+1. **Inline Annotated PDF** ⭐ **NEW**: AI insights placed directly alongside relevant lesson sections
+2. **Traditional Annotated PDF**: Original lesson plan + comprehensive AI analysis at the end
+3. **JSON Results**: Complete analysis data for future reference
+4. **Web Results**: Interactive results page with both download options
+
+### 🎯 Inline vs Traditional Annotations
+
+**Inline Annotations** (Recommended):
+- ✅ Insights placed next to relevant lesson sections
+- ✅ Perfect for immediate classroom implementation
+- ✅ Easy to read while teaching
+- ✅ Focused, actionable suggestions
+
+**Traditional Annotations**:
+- ✅ Comprehensive analysis report
+- ✅ Detailed explanations and examples
+- ✅ Good for lesson planning and reflection
+- ✅ Complete pedagogical insights
 
 ### Annotation Categories
 

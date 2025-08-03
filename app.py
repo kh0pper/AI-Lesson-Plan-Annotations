@@ -72,12 +72,24 @@ def upload_file():
         result = annotator.process_lesson_plan_with_custom_params(parameters)
         
         if result["success"]:
-            # Move annotated PDF to downloads folder
+            # Move annotated PDFs to downloads folder
+            download_files = {}
+            
+            # Traditional annotated PDF
             annotated_pdf_path = result.get("annotated_pdf")
             if annotated_pdf_path and os.path.exists(annotated_pdf_path):
                 download_filename = f"annotated_{unique_id}_{filename}"
                 download_path = os.path.join(app.config['DOWNLOAD_FOLDER'], download_filename)
                 os.rename(annotated_pdf_path, download_path)
+                download_files['traditional'] = download_filename
+            
+            # Inline annotated PDF  
+            inline_pdf_path = result.get("inline_annotated_pdf")
+            if inline_pdf_path and os.path.exists(inline_pdf_path):
+                inline_filename = f"inline_annotated_{unique_id}_{filename}"
+                inline_path = os.path.join(app.config['DOWNLOAD_FOLDER'], inline_filename)
+                os.rename(inline_pdf_path, inline_path)
+                download_files['inline'] = inline_filename
                 
                 # Save processing results
                 results_file = os.path.join(app.config['DOWNLOAD_FOLDER'], f"results_{unique_id}.json")
@@ -86,7 +98,7 @@ def upload_file():
                 
                 return render_template('results.html', 
                                      success=True,
-                                     download_file=download_filename,
+                                     download_files=download_files,
                                      unique_id=unique_id,
                                      original_filename=filename,
                                      annotations=result["annotations"],
