@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Lesson Plan - AI Annotator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-upload me-2"></i>Upload Your Lesson Plan
+                </h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Upload a PDF lesson plan and get AI-powered annotations and insights. 
+                    Customize the analysis parameters to focus on specific aspects of your lesson.
+                </p>
+
+                <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <!-- File Upload -->
+                    <div class="mb-4">
+                        <label for="file" class="form-label">
+                            <i class="fas fa-file-pdf me-2"></i>Lesson Plan PDF
+                        </label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".pdf" required>
+                        <div class="form-text">Maximum file size: 16MB</div>
+                    </div>
+
+                    <!-- Annotation Preset -->
+                    <div class="mb-4">
+                        <label for="preset" class="form-label">
+                            <i class="fas fa-cogs me-2"></i>Annotation Preset
+                        </label>
+                        <select class="form-select" id="preset" name="preset" onchange="toggleCustomParameters()">
+                            {% for preset_key, preset_desc in presets.items() %}
+                                <option value="{{ preset_key }}" {% if preset_key == 'kindergarten_phonics' %}selected{% endif %}>
+                                    {{ preset_desc }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose a preset that best matches your lesson type</div>
+                    </div>
+
+                    <!-- Custom Guidelines -->
+                    <div class="mb-4">
+                        <label for="custom_guidelines" class="form-label">
+                            <i class="fas fa-edit me-2"></i>Custom Annotation Guidelines
+                        </label>
+                        <textarea class="form-control" id="custom_guidelines" name="custom_guidelines" rows="4" 
+                                  placeholder="Enter any specific guidelines or focus areas for the AI to consider when analyzing your lesson plan..."></textarea>
+                        <div class="form-text">Optional: Provide specific instructions for the AI analysis</div>
+                    </div>
+
+                    <!-- Custom Parameters (Hidden by default) -->
+                    <div id="customParameters" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0">Custom Parameters</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Pedagogical Approach</label>
+                                        <select class="form-select" name="pedagogical_approach">
+                                            <option value="Constructivist">Constructivist</option>
+                                            <option value="Behaviorist">Behaviorist</option>
+                                            <option value="Cognitivist">Cognitivist</option>
+                                            <option value="Humanistic">Humanistic</option>
+                                            <option value="Social Learning">Social Learning</option>
+                                            <option value="Multisensory Learning">Multisensory Learning</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Engagement Level</label>
+                                        <select class="form-select" name="engagement_level">
+                                            <option value="High">High Interactive</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="Low">Low</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Assessment Type</label>
+                                        <select class="form-select" name="assessment_type">
+                                            <option value="Formative">Formative</option>
+                                            <option value="Summative">Summative</option>
+                                            <option value="Authentic">Authentic</option>
+                                            <option value="Performance">Performance</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Differentiation</label>
+                                        <select class="form-select" name="differentiation">
+                                            <option value="Multi-level">Multi-level Support</option>
+                                            <option value="Universal Design">Universal Design for Learning</option>
+                                            <option value="Tiered">Tiered Instruction</option>
+                                            <option value="Flexible Grouping">Flexible Grouping</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Language Focus</label>
+                                        <select class="form-select" name="language_focus">
+                                            <option value="Spanish">Spanish L1 Development</option>
+                                            <option value="English">English as Second Language</option>
+                                            <option value="Bilingual">Bilingual Education</option>
+                                            <option value="General">General Language Arts</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Age Group</label>
+                                        <select class="form-select" name="age_group">
+                                            <option value="3-4 years">3-4 years (Pre-K)</option>
+                                            <option value="5-6 years">5-6 years (Kindergarten)</option>
+                                            <option value="6-7 years">6-7 years (1st Grade)</option>
+                                            <option value="7-8 years">7-8 years (2nd Grade)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Focus Areas -->
+                                <div class="mb-3">
+                                    <label class="form-label">Focus Areas</label>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_1" value="Student Engagement">
+                                                <label class="form-check-label">Student Engagement</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_2" value="Assessment Strategies">
+                                                <label class="form-check-label">Assessment Strategies</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_3" value="Differentiated Instruction">
+                                                <label class="form-check-label">Differentiated Instruction</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_4" value="Phonological Awareness">
+                                                <label class="form-check-label">Phonological Awareness</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_5" value="Vocabulary Development">
+                                                <label class="form-check-label">Vocabulary Development</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_6" value="Reading Comprehension">
+                                                <label class="form-check-label">Reading Comprehension</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_7" value="Classroom Management">
+                                                <label class="form-check-label">Classroom Management</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_8" value="Cultural Responsiveness">
+                                                <label class="form-check-label">Cultural Responsiveness</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="focus_area_9" value="Technology Integration">
+                                                <label class="form-check-label">Technology Integration</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-magic me-2"></i>Analyze Lesson Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Processing Modal -->
+        <div class="modal fade" id="processingModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center py-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5>Processing Your Lesson Plan</h5>
+                        <p class="text-muted">AI is analyzing your lesson plan and generating annotations. This may take a few moments...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCustomParameters() {
+    const preset = document.getElementById('preset').value;
+    const customParams = document.getElementById('customParameters');
+    
+    if (preset === 'custom') {
+        customParams.style.display = 'block';
+    } else {
+        customParams.style.display = 'none';
+    }
+}
+
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    document.getElementById('submitBtn').disabled = true;
+    const modal = new bootstrap.Modal(document.getElementById('processingModal'));
+    modal.show();
+});
+</script>
+{% endblock %}
