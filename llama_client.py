@@ -74,7 +74,25 @@ LESSON PLAN CONTENT:
 
 Please provide annotations in the following categories:
 
-1. **Pedagogical Strengths**: What teaching strategies are particularly effective?
+{self._get_annotation_categories(parameters)}
+
+Provide specific, actionable recommendations that a kindergarten teacher could immediately implement.
+"""
+        return prompt
+    
+    def _get_annotation_categories(self, parameters: Dict) -> str:
+        """Generate annotation categories based on theme and custom definitions."""
+        custom_categories = parameters.get('custom_category_definitions', {})
+        
+        if custom_categories:
+            # Use custom user-defined categories
+            categories = []
+            for i, (category_key, definition) in enumerate(custom_categories.items(), 1):
+                categories.append(f"{i}. **{definition}**: Provide specific insights and recommendations related to: {definition}")
+            return "\n\n".join(categories)
+        else:
+            # Use default predefined categories
+            return """1. **Pedagogical Strengths**: What teaching strategies are particularly effective?
 
 2. **Student Engagement Opportunities**: How can student participation be enhanced?
 
@@ -88,8 +106,4 @@ Please provide annotations in the following categories:
 
 7. **Areas for Improvement**: Constructive suggestions for enhancement.
 
-8. **Cultural/Linguistic Considerations**: Spanish language learning specific insights.
-
-Provide specific, actionable recommendations that a kindergarten teacher could immediately implement.
-"""
-        return prompt
+8. **Cultural/Linguistic Considerations**: Spanish language learning specific insights."""

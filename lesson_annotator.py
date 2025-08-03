@@ -10,6 +10,7 @@ from pdf_annotator import PDFAnnotationGenerator
 from inline_pdf_annotator import InlinePDFAnnotator
 from pdf_overlay_annotator import PDFOverlayAnnotator
 from smart_overlay_annotator import SmartOverlayAnnotator
+from combined_pdf_annotator import CombinedPDFAnnotator
 
 
 class LessonPlanAnnotator:
@@ -31,6 +32,9 @@ class LessonPlanAnnotator:
     
     def process_lesson_plan_with_custom_params(self, parameters: Dict) -> Dict:
         """Complete workflow to process and annotate a lesson plan."""
+        
+        # Store parameters for use in PDF generation methods
+        self.current_parameters = parameters
         
         print("🔍 Extracting PDF content...")
         success = self._extract_content()
@@ -63,8 +67,16 @@ class LessonPlanAnnotator:
             # Save results
             self._save_results(result)
             
-            # Generate all types of annotated PDFs
-            print("📄 Creating annotated PDFs...")
+            # Generate combined PDF with all annotation formats
+            print("📄 Creating comprehensive combined PDF...")
+            combined_pdf = self._create_combined_annotated_pdf(result)
+            
+            if combined_pdf:
+                result["combined_annotated_pdf"] = combined_pdf
+                print(f"📑 🎯 Comprehensive annotated PDF saved as: {combined_pdf}")
+            
+            # Keep individual PDF generation for backward compatibility (optional)
+            # Users can still access individual formats if needed
             annotated_pdf = self._create_annotated_pdf(result)
             inline_pdf = self._create_inline_annotated_pdf(result)
             overlay_pdf = self._create_overlay_annotated_pdf(result)
@@ -72,19 +84,12 @@ class LessonPlanAnnotator:
             
             if annotated_pdf:
                 result["annotated_pdf"] = annotated_pdf
-                print(f"📑 Traditional annotated PDF saved as: {annotated_pdf}")
-            
             if inline_pdf:
                 result["inline_annotated_pdf"] = inline_pdf
-                print(f"📑 Inline annotated PDF saved as: {inline_pdf}")
-                
             if overlay_pdf:
                 result["overlay_annotated_pdf"] = overlay_pdf
-                print(f"📑 Basic overlay PDF saved as: {overlay_pdf}")
-                
             if smart_overlay_pdf:
                 result["smart_overlay_pdf"] = smart_overlay_pdf
-                print(f"📑 🧠 Smart overlay PDF saved as: {smart_overlay_pdf}")
             
             return result
         else:
@@ -183,7 +188,9 @@ class LessonPlanAnnotator:
     def _create_smart_overlay_annotated_pdf(self, results: Dict) -> Optional[str]:
         """Create smart overlay annotated PDF with intelligent positioning."""
         try:
-            generator = SmartOverlayAnnotator(self.pdf_path)
+            # Get theme from current parameters, default to 'educational'
+            theme = getattr(self, 'current_parameters', {}).get('annotation_theme', 'educational')
+            generator = SmartOverlayAnnotator(self.pdf_path, theme=theme)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_filename = f"smart_overlay_{os.path.basename(self.pdf_path).replace('.pdf', '')}_{timestamp}.pdf"
             
@@ -192,6 +199,22 @@ class LessonPlanAnnotator:
             
         except Exception as e:
             print(f"Warning: Could not create smart overlay annotated PDF: {e}")
+            return None
+    
+    def _create_combined_annotated_pdf(self, results: Dict) -> Optional[str]:
+        """Create comprehensive combined PDF with all annotation formats."""
+        try:
+            # Get theme from current parameters, default to 'educational'
+            theme = getattr(self, 'current_parameters', {}).get('annotation_theme', 'educational')
+            generator = CombinedPDFAnnotator(self.pdf_path, theme=theme)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filename = f"combined_{os.path.basename(self.pdf_path).replace('.pdf', '')}_{timestamp}.pdf"
+            
+            combined_pdf = generator.create_combined_pdf(results, output_filename)
+            return combined_pdf
+            
+        except Exception as e:
+            print(f"Warning: Could not create combined annotated PDF: {e}")
             return None
     
     def get_lesson_summary(self) -> Dict:

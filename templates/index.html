@@ -115,6 +115,87 @@
                                             <option value="7-8 years">7-8 years (2nd Grade)</option>
                                         </select>
                                     </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Annotation Color Theme</label>
+                                        <select class="form-select" name="annotation_theme" onchange="toggleCustomCategories(this.value)">
+                                            <option value="educational">Educational Psychology (Default)</option>
+                                            <option value="vibrant">Vibrant (High Contrast)</option>
+                                            <option value="pastel">Pastel (Soft Colors)</option>
+                                            <option value="academic">Academic (Professional)</option>
+                                            <option value="monochrome">Monochrome (Print-Friendly)</option>
+                                            <option value="warm">Warm Tones</option>
+                                            <option value="cool">Cool Tones</option>
+                                            <option value="custom">Custom User-Defined Categories</option>
+                                        </select>
+                                        <div class="form-text">Choose the color scheme for smart overlay annotations</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Custom Category Definitions (Hidden by default) -->
+                                <div id="customCategoryDefinitions" style="display: none;">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">🎨 Custom Color Category Definitions</h6>
+                                            <small>Define what each color represents for AI annotation categorization</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🔴 Red Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category1_definition" 
+                                                           placeholder="e.g., Critical Issues, Urgent Problems" 
+                                                           value="Critical Issues">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🟢 Green Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category2_definition" 
+                                                           placeholder="e.g., Strengths, Success Areas" 
+                                                           value="Strengths & Successes">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🔵 Blue Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category3_definition" 
+                                                           placeholder="e.g., Student Engagement, Participation" 
+                                                           value="Student Engagement">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🟠 Orange Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category4_definition" 
+                                                           placeholder="e.g., Teaching Strategies, Methods" 
+                                                           value="Teaching Strategies">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🟣 Purple Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category5_definition" 
+                                                           placeholder="e.g., Assessment, Evaluation" 
+                                                           value="Assessment Methods">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🟤 Brown/Olive Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category6_definition" 
+                                                           placeholder="e.g., Resources, Materials" 
+                                                           value="Resources & Materials">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🩷 Magenta Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category7_definition" 
+                                                           placeholder="e.g., Extensions, Advanced Activities" 
+                                                           value="Extensions & Enrichment">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">🔷 Teal Category Meaning</label>
+                                                    <input type="text" class="form-control" name="category8_definition" 
+                                                           placeholder="e.g., Cultural Considerations, Diversity" 
+                                                           value="Cultural Considerations">
+                                                </div>
+                                            </div>
+                                            <div class="alert alert-info mt-3">
+                                                <i class="fas fa-info-circle"></i> 
+                                                <strong>How it works:</strong> The AI will categorize annotations based on your definitions above, 
+                                                then apply the corresponding colors in the smart overlay PDF.
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <!-- Focus Areas -->
@@ -205,6 +286,16 @@ function toggleCustomParameters() {
         customParams.style.display = 'block';
     } else {
         customParams.style.display = 'none';
+    }
+}
+
+function toggleCustomCategories(themeValue) {
+    const customCategories = document.getElementById('customCategoryDefinitions');
+    
+    if (themeValue === 'custom') {
+        customCategories.style.display = 'block';
+    } else {
+        customCategories.style.display = 'none';
     }
 }
 

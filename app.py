@@ -75,6 +75,14 @@ def upload_file():
             # Move annotated PDFs to downloads folder
             download_files = {}
             
+            # Combined annotated PDF (primary output)
+            combined_pdf_path = result.get("combined_annotated_pdf")
+            if combined_pdf_path and os.path.exists(combined_pdf_path):
+                combined_filename = f"comprehensive_{unique_id}_{filename}"
+                combined_path = os.path.join(app.config['DOWNLOAD_FOLDER'], combined_filename)
+                os.rename(combined_pdf_path, combined_path)
+                download_files['combined'] = combined_filename
+            
             # Traditional annotated PDF
             annotated_pdf_path = result.get("annotated_pdf")
             if annotated_pdf_path and os.path.exists(annotated_pdf_path):
@@ -128,7 +136,11 @@ def upload_file():
             return redirect(url_for('index'))
             
     except Exception as e:
-        flash(f'Error processing file: {str(e)}')
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"🚨 Processing Error: {str(e)}")
+        print(f"📋 Full traceback:\n{error_details}")
+        flash(f'Error processing file: {str(e)}. Please check the server logs for details.')
         return redirect(url_for('index'))
     
     finally:
@@ -190,7 +202,8 @@ def _get_annotation_parameters(preset: str, form_data, custom_guidelines: str) -
             "assessment_type": form_data.get('assessment_type', 'Formative'),
             "differentiation": form_data.get('differentiation', 'Multi-level'),
             "language_focus": form_data.get('language_focus', 'Spanish'),
-            "age_group": form_data.get('age_group', '5-6 years')
+            "age_group": form_data.get('age_group', '5-6 years'),
+            "annotation_theme": form_data.get('annotation_theme', 'educational')
         }
     else:
         # Use preset and convert to dict
@@ -204,6 +217,20 @@ def _get_annotation_parameters(preset: str, form_data, custom_guidelines: str) -
             params = ParameterPresets.kindergarten_phonics()
         
         parameters = parameters_to_dict(params)
+    
+    # Add annotation theme (always available regardless of preset)
+    parameters["annotation_theme"] = form_data.get('annotation_theme', 'educational')
+    
+    # Add custom category definitions if using custom theme
+    if form_data.get('annotation_theme') == 'custom':
+        custom_categories = {}
+        for i in range(1, 9):  # category1 through category8
+            category_key = f'category{i}'
+            definition = form_data.get(f'category{i}_definition', '').strip()
+            if definition:
+                custom_categories[category_key] = definition
+        if custom_categories:
+            parameters["custom_category_definitions"] = custom_categories
     
     # Add custom guidelines if provided
     if custom_guidelines:
