@@ -19,12 +19,18 @@
                         <p class="text-muted">Your lesson plan has been successfully analyzed with AI-powered insights.</p>
                     </div>
                     <div class="col-md-4 text-end">
-                        {% if download_files.get('overlay') %}
+                        {% if download_files.get('smart_overlay') %}
+                        <a href="{{ url_for('download_file', filename=download_files.smart_overlay) }}" 
+                           class="btn btn-success btn-lg mb-2 d-block">
+                            <i class="fas fa-brain me-2"></i>Download Smart Overlay PDF
+                        </a>
+                        <small class="text-success">🧠 BEST: Intelligent layout-aware annotations</small>
+                        {% elif download_files.get('overlay') %}
                         <a href="{{ url_for('download_file', filename=download_files.overlay) }}" 
                            class="btn btn-success btn-lg mb-2 d-block">
                             <i class="fas fa-magic me-2"></i>Download Overlay Annotated PDF
                         </a>
-                        <small class="text-success">🎯 BEST: Visual overlays on original layout</small>
+                        <small class="text-success">🎯 GOOD: Visual overlays on original layout</small>
                         {% endif %}
                         
                         {% if download_files.get('inline') %}
@@ -128,10 +134,16 @@
                         </a>
                     </div>
                     <div class="col-md-6 text-end">
+                        {% if download_files.get('smart_overlay') %}
+                        <a href="{{ url_for('download_file', filename=download_files.smart_overlay) }}" 
+                           class="btn btn-success me-1">
+                            <i class="fas fa-brain me-1"></i>Smart
+                        </a>
+                        {% endif %}
                         {% if download_files.get('overlay') %}
                         <a href="{{ url_for('download_file', filename=download_files.overlay) }}" 
-                           class="btn btn-success me-1">
-                            <i class="fas fa-magic me-1"></i>Overlay
+                           class="btn btn-outline-success me-1">
+                            <i class="fas fa-magic me-1"></i>Basic
                         </a>
                         {% endif %}
                         {% if download_files.get('inline') %}

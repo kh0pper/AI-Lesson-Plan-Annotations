@@ -98,6 +98,14 @@ def upload_file():
                 overlay_path = os.path.join(app.config['DOWNLOAD_FOLDER'], overlay_filename)
                 os.rename(overlay_pdf_path, overlay_path)
                 download_files['overlay'] = overlay_filename
+            
+            # Smart overlay annotated PDF
+            smart_overlay_pdf_path = result.get("smart_overlay_pdf")
+            if smart_overlay_pdf_path and os.path.exists(smart_overlay_pdf_path):
+                smart_overlay_filename = f"smart_overlay_{unique_id}_{filename}"
+                smart_overlay_path = os.path.join(app.config['DOWNLOAD_FOLDER'], smart_overlay_filename)
+                os.rename(smart_overlay_pdf_path, smart_overlay_path)
+                download_files['smart_overlay'] = smart_overlay_filename
                 
                 # Save processing results
                 results_file = os.path.join(app.config['DOWNLOAD_FOLDER'], f"results_{unique_id}.json")

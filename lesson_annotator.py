@@ -9,6 +9,7 @@ from annotation_parameters import ParameterPresets, parameters_to_dict
 from pdf_annotator import PDFAnnotationGenerator
 from inline_pdf_annotator import InlinePDFAnnotator
 from pdf_overlay_annotator import PDFOverlayAnnotator
+from smart_overlay_annotator import SmartOverlayAnnotator
 
 
 class LessonPlanAnnotator:
@@ -62,11 +63,12 @@ class LessonPlanAnnotator:
             # Save results
             self._save_results(result)
             
-            # Generate all three types of annotated PDFs
+            # Generate all types of annotated PDFs
             print("📄 Creating annotated PDFs...")
             annotated_pdf = self._create_annotated_pdf(result)
             inline_pdf = self._create_inline_annotated_pdf(result)
             overlay_pdf = self._create_overlay_annotated_pdf(result)
+            smart_overlay_pdf = self._create_smart_overlay_annotated_pdf(result)
             
             if annotated_pdf:
                 result["annotated_pdf"] = annotated_pdf
@@ -78,7 +80,11 @@ class LessonPlanAnnotator:
                 
             if overlay_pdf:
                 result["overlay_annotated_pdf"] = overlay_pdf
-                print(f"📑 Overlay annotated PDF saved as: {overlay_pdf}")
+                print(f"📑 Basic overlay PDF saved as: {overlay_pdf}")
+                
+            if smart_overlay_pdf:
+                result["smart_overlay_pdf"] = smart_overlay_pdf
+                print(f"📑 🧠 Smart overlay PDF saved as: {smart_overlay_pdf}")
             
             return result
         else:
@@ -172,6 +178,20 @@ class LessonPlanAnnotator:
             
         except Exception as e:
             print(f"Warning: Could not create overlay annotated PDF: {e}")
+            return None
+    
+    def _create_smart_overlay_annotated_pdf(self, results: Dict) -> Optional[str]:
+        """Create smart overlay annotated PDF with intelligent positioning."""
+        try:
+            generator = SmartOverlayAnnotator(self.pdf_path)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filename = f"smart_overlay_{os.path.basename(self.pdf_path).replace('.pdf', '')}_{timestamp}.pdf"
+            
+            smart_overlay_pdf = generator.create_smart_overlay_pdf(results, output_filename)
+            return smart_overlay_pdf
+            
+        except Exception as e:
+            print(f"Warning: Could not create smart overlay annotated PDF: {e}")
             return None
     
     def get_lesson_summary(self) -> Dict:

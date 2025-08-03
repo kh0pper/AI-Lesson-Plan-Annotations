@@ -5,7 +5,8 @@ An intelligent web application that analyzes lesson plans using AI and provides 
 ## ✨ Features
 
 - **PDF Upload & Analysis**: Upload lesson plan PDFs and get AI-powered insights
-- **Overlay Annotations** 🎯 **NEWEST**: Visual overlays on the original PDF preserving exact layout
+- **Smart Overlay Annotations** 🧠 **REVOLUTIONARY**: Intelligent layout-aware visual overlays with advanced positioning
+- **Overlay Annotations**: Visual overlays on the original PDF preserving exact layout
 - **Inline Annotations**: Annotations placed directly alongside lesson content for immediate use
 - **Traditional Annotations**: Comprehensive analysis appended after the original lesson plan
 - **Customizable Parameters**: Choose from presets or create custom annotation guidelines
@@ -69,6 +70,9 @@ python create_inline_pdf.py annotations_file.json
 
 # Create overlay PDF from existing JSON results
 python create_overlay_pdf.py annotations_file.json
+
+# Create smart overlay PDF from existing JSON results (BEST)
+python create_smart_overlay_pdf.py annotations_file.json
 ```
 
 ## 📁 Project Structure
@@ -125,15 +129,25 @@ ai-lesson-plan-annotate/
 
 The application generates:
 
-1. **Overlay Annotated PDF** 🎯 **BEST**: Visual overlays on original PDF preserving exact layout
-2. **Inline Annotated PDF**: AI insights placed directly alongside relevant lesson sections  
-3. **Traditional Annotated PDF**: Original lesson plan + comprehensive AI analysis at the end
-4. **JSON Results**: Complete analysis data for future reference
-5. **Web Results**: Interactive results page with all download options
+1. **Smart Overlay PDF** 🧠 **REVOLUTIONARY**: Intelligent layout-aware annotations with advanced positioning
+2. **Overlay Annotated PDF**: Visual overlays on original PDF preserving exact layout
+3. **Inline Annotated PDF**: AI insights placed directly alongside relevant lesson sections  
+4. **Traditional Annotated PDF**: Original lesson plan + comprehensive AI analysis at the end
+5. **JSON Results**: Complete analysis data for future reference
+6. **Web Results**: Interactive results page with all download options
 
 ### 🎯 Annotation Types Comparison
 
-**Overlay Annotations** (Recommended) 🎯:
+**Smart Overlay Annotations** (Highly Recommended) 🧠:
+- ✅ Intelligent layout analysis and content detection
+- ✅ Priority-based annotation hierarchy
+- ✅ Content-aware positioning (objectives near objectives, etc.)
+- ✅ Advanced white space detection
+- ✅ Enhanced visual design with gradients and icons
+- ✅ Color-coded by insight type with smart spacing
+- ✅ Perfect for maintaining document integrity
+
+**Overlay Annotations** 🎯:
 - ✅ Preserves original PDF layout exactly
 - ✅ Visual annotation boxes in margins
 - ✅ Color-coded by insight type
