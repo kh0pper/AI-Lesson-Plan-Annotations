@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lesson Plan Annotator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Lesson Plan Annotator</h1>
+            <p>Upload your lesson plans and get AI-powered annotations and insights</p>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <h2>Upload Lesson Plan</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <div class="upload-icon">📄</div>
+                        <p>Drag and drop your lesson plan here or click to browse</p>
+                        <input type="file" id="fileInput" accept=".txt,.pdf,.doc,.docx" hidden>
+                        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                            Choose File
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-input-section">
+                <h2>Or Paste Lesson Plan Text</h2>
+                <textarea id="lessonPlanText" placeholder="Paste your lesson plan content here..."></textarea>
+                <button id="analyzeBtn" class="analyze-btn">Analyze Lesson Plan</button>
+            </div>
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h2>AI Analysis & Annotations</h2>
+                <div class="annotations" id="annotations">
+                    <!-- Annotations will be displayed here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
