@@ -19,18 +19,25 @@
                         <p class="text-muted">Your lesson plan has been successfully analyzed with AI-powered insights.</p>
                     </div>
                     <div class="col-md-4 text-end">
+                        {% if download_files.get('overlay') %}
+                        <a href="{{ url_for('download_file', filename=download_files.overlay) }}" 
+                           class="btn btn-success btn-lg mb-2 d-block">
+                            <i class="fas fa-magic me-2"></i>Download Overlay Annotated PDF
+                        </a>
+                        <small class="text-success">🎯 BEST: Visual overlays on original layout</small>
+                        {% endif %}
+                        
                         {% if download_files.get('inline') %}
                         <a href="{{ url_for('download_file', filename=download_files.inline) }}" 
-                           class="btn btn-success btn-lg mb-2 d-block">
-                            <i class="fas fa-star me-2"></i>Download Inline Annotated PDF
+                           class="btn btn-outline-success mt-1 d-block">
+                            <i class="fas fa-list-alt me-2"></i>Download Inline PDF
                         </a>
-                        <small class="text-muted">✨ NEW: Annotations alongside content</small>
                         {% endif %}
                         
                         {% if download_files.get('traditional') %}
                         <a href="{{ url_for('download_file', filename=download_files.traditional) }}" 
-                           class="btn btn-outline-primary mt-2">
-                            <i class="fas fa-download me-2"></i>Download Traditional PDF
+                           class="btn btn-outline-primary mt-1">
+                            <i class="fas fa-download me-2"></i>Traditional PDF
                         </a>
                         {% endif %}
                     </div>
@@ -121,16 +128,22 @@
                         </a>
                     </div>
                     <div class="col-md-6 text-end">
+                        {% if download_files.get('overlay') %}
+                        <a href="{{ url_for('download_file', filename=download_files.overlay) }}" 
+                           class="btn btn-success me-1">
+                            <i class="fas fa-magic me-1"></i>Overlay
+                        </a>
+                        {% endif %}
                         {% if download_files.get('inline') %}
                         <a href="{{ url_for('download_file', filename=download_files.inline) }}" 
-                           class="btn btn-success me-2">
-                            <i class="fas fa-star me-2"></i>Inline PDF
+                           class="btn btn-outline-success me-1">
+                            <i class="fas fa-list-alt me-1"></i>Inline
                         </a>
                         {% endif %}
                         {% if download_files.get('traditional') %}
                         <a href="{{ url_for('download_file', filename=download_files.traditional) }}" 
-                           class="btn btn-outline-success">
-                            <i class="fas fa-download me-2"></i>Traditional PDF
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>Traditional
                         </a>
                         {% endif %}
                     </div>

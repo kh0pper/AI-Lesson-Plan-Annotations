@@ -8,6 +8,7 @@ from enhanced_llama_client import EnhancedLlamaAIClient
 from annotation_parameters import ParameterPresets, parameters_to_dict
 from pdf_annotator import PDFAnnotationGenerator
 from inline_pdf_annotator import InlinePDFAnnotator
+from pdf_overlay_annotator import PDFOverlayAnnotator
 
 
 class LessonPlanAnnotator:
@@ -61,10 +62,11 @@ class LessonPlanAnnotator:
             # Save results
             self._save_results(result)
             
-            # Generate both traditional and inline annotated PDFs
+            # Generate all three types of annotated PDFs
             print("📄 Creating annotated PDFs...")
             annotated_pdf = self._create_annotated_pdf(result)
             inline_pdf = self._create_inline_annotated_pdf(result)
+            overlay_pdf = self._create_overlay_annotated_pdf(result)
             
             if annotated_pdf:
                 result["annotated_pdf"] = annotated_pdf
@@ -73,6 +75,10 @@ class LessonPlanAnnotator:
             if inline_pdf:
                 result["inline_annotated_pdf"] = inline_pdf
                 print(f"📑 Inline annotated PDF saved as: {inline_pdf}")
+                
+            if overlay_pdf:
+                result["overlay_annotated_pdf"] = overlay_pdf
+                print(f"📑 Overlay annotated PDF saved as: {overlay_pdf}")
             
             return result
         else:
@@ -152,6 +158,20 @@ class LessonPlanAnnotator:
             
         except Exception as e:
             print(f"Warning: Could not create inline annotated PDF: {e}")
+            return None
+    
+    def _create_overlay_annotated_pdf(self, results: Dict) -> Optional[str]:
+        """Create overlay annotated PDF with AI insights as visual overlays."""
+        try:
+            generator = PDFOverlayAnnotator(self.pdf_path)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filename = f"overlay_{os.path.basename(self.pdf_path).replace('.pdf', '')}_{timestamp}.pdf"
+            
+            overlay_pdf = generator.create_overlay_annotated_pdf(results, output_filename)
+            return overlay_pdf
+            
+        except Exception as e:
+            print(f"Warning: Could not create overlay annotated PDF: {e}")
             return None
     
     def get_lesson_summary(self) -> Dict:

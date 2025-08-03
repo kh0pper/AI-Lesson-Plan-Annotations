@@ -5,7 +5,8 @@ An intelligent web application that analyzes lesson plans using AI and provides 
 ## ✨ Features
 
 - **PDF Upload & Analysis**: Upload lesson plan PDFs and get AI-powered insights
-- **Inline Annotations** ⭐ **NEW**: Annotations placed directly alongside lesson content for immediate use
+- **Overlay Annotations** 🎯 **NEWEST**: Visual overlays on the original PDF preserving exact layout
+- **Inline Annotations**: Annotations placed directly alongside lesson content for immediate use
 - **Traditional Annotations**: Comprehensive analysis appended after the original lesson plan
 - **Customizable Parameters**: Choose from presets or create custom annotation guidelines
 - **Professional Output**: Generate annotated PDFs with detailed recommendations
@@ -65,6 +66,9 @@ python create_pdf_from_json.py annotations_file.json
 
 # Create inline PDF from existing JSON results  
 python create_inline_pdf.py annotations_file.json
+
+# Create overlay PDF from existing JSON results
+python create_overlay_pdf.py annotations_file.json
 ```
 
 ## 📁 Project Structure
@@ -121,18 +125,26 @@ ai-lesson-plan-annotate/
 
 The application generates:
 
-1. **Inline Annotated PDF** ⭐ **NEW**: AI insights placed directly alongside relevant lesson sections
-2. **Traditional Annotated PDF**: Original lesson plan + comprehensive AI analysis at the end
-3. **JSON Results**: Complete analysis data for future reference
-4. **Web Results**: Interactive results page with both download options
+1. **Overlay Annotated PDF** 🎯 **BEST**: Visual overlays on original PDF preserving exact layout
+2. **Inline Annotated PDF**: AI insights placed directly alongside relevant lesson sections  
+3. **Traditional Annotated PDF**: Original lesson plan + comprehensive AI analysis at the end
+4. **JSON Results**: Complete analysis data for future reference
+5. **Web Results**: Interactive results page with all download options
 
-### 🎯 Inline vs Traditional Annotations
+### 🎯 Annotation Types Comparison
 
-**Inline Annotations** (Recommended):
-- ✅ Insights placed next to relevant lesson sections
-- ✅ Perfect for immediate classroom implementation
+**Overlay Annotations** (Recommended) 🎯:
+- ✅ Preserves original PDF layout exactly
+- ✅ Visual annotation boxes in margins
+- ✅ Color-coded by insight type
+- ✅ Perfect for maintaining document integrity
 - ✅ Easy to read while teaching
+
+**Inline Annotations**:
+- ✅ Insights placed next to relevant lesson sections
+- ✅ Good for immediate classroom implementation
 - ✅ Focused, actionable suggestions
+- ✅ Restructured content format
 
 **Traditional Annotations**:
 - ✅ Comprehensive analysis report

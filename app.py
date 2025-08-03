@@ -90,6 +90,14 @@ def upload_file():
                 inline_path = os.path.join(app.config['DOWNLOAD_FOLDER'], inline_filename)
                 os.rename(inline_pdf_path, inline_path)
                 download_files['inline'] = inline_filename
+            
+            # Overlay annotated PDF
+            overlay_pdf_path = result.get("overlay_annotated_pdf")
+            if overlay_pdf_path and os.path.exists(overlay_pdf_path):
+                overlay_filename = f"overlay_annotated_{unique_id}_{filename}"
+                overlay_path = os.path.join(app.config['DOWNLOAD_FOLDER'], overlay_filename)
+                os.rename(overlay_pdf_path, overlay_path)
+                download_files['overlay'] = overlay_filename
                 
                 # Save processing results
                 results_file = os.path.join(app.config['DOWNLOAD_FOLDER'], f"results_{unique_id}.json")
