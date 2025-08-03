@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  lesson-annotator:
+    build: .
+    image: lesson-annotator:latest
+    container_name: ai-lesson-annotator
+    ports:
+      - "3000:3000"
+    environment:
+      - LLAMA_API_KEY=${LLAMA_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./downloads:/app/downloads
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300  # Check every 5 minutes
+      - WATCHTOWER_LABEL_ENABLE=true  # Only update containers with watchtower.enable label
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_NOTIFICATIONS=slack
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=${SLACK_WEBHOOK_URL:-}
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"  # Don't update watchtower itself
+
+  # Optional: Add a reverse proxy for better production setup
+  nginx:
+    image: nginx:alpine
+    container_name: lesson-annotator-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - lesson-annotator
+    restart: unless-stopped
+    profiles:
+      - production  # Only run with --profile production
+
+networks:
+  default:
+    name: lesson-annotator-network

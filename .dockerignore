@@ -1,0 +1,58 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+tests/
+test_*.py
+
+# Local development files
+.env.local
+.env.development
+
+# Generated PDFs (except sample)
+*.pdf
+!fonetica8.pdf
+
+# Upload/download directories (will be created in container)
+uploads/*
+downloads/*
+!uploads/.gitkeep
+!downloads/.gitkeep
+
+# Claude settings
+.claude/
