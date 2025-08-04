@@ -27,6 +27,29 @@
                         <div class="form-text">Maximum file size: 16MB</div>
                     </div>
 
+                    <!-- Saved Profiles (for logged-in users) -->
+                    {% if current_user.is_authenticated and user_profiles %}
+                    <div class="mb-4">
+                        <label for="saved_profile" class="form-label">
+                            <i class="fas fa-bookmark me-2"></i>My Saved Profiles
+                        </label>
+                        <select class="form-select" id="saved_profile" name="saved_profile" onchange="loadSavedProfile()">
+                            <option value="">-- Select a saved profile --</option>
+                            {% for profile in user_profiles %}
+                                <option value="{{ profile.id }}" {% if profile.is_default %}selected{% endif %}>
+                                    {{ profile.name }}{% if profile.is_default %} (Default){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Load your custom annotation settings 
+                            <a href="{{ url_for('profiles') }}" class="text-decoration-none">
+                                <i class="fas fa-cog"></i> Manage Profiles
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Annotation Preset -->
                     <div class="mb-4">
                         <label for="preset" class="form-label">
@@ -113,6 +136,16 @@
                                             <option value="5-6 years">5-6 years (Kindergarten)</option>
                                             <option value="6-7 years">6-7 years (1st Grade)</option>
                                             <option value="7-8 years">7-8 years (2nd Grade)</option>
+                                            <option value="8-9 years">8-9 years (3rd Grade)</option>
+                                            <option value="9-10 years">9-10 years (4th Grade)</option>
+                                            <option value="10-11 years">10-11 years (5th Grade)</option>
+                                            <option value="11-12 years">11-12 years (6th Grade)</option>
+                                            <option value="12-13 years">12-13 years (7th Grade)</option>
+                                            <option value="13-14 years">13-14 years (8th Grade)</option>
+                                            <option value="14-15 years">14-15 years (9th Grade)</option>
+                                            <option value="15-16 years">15-16 years (10th Grade)</option>
+                                            <option value="16-17 years">16-17 years (11th Grade)</option>
+                                            <option value="17-18 years">17-18 years (12th Grade)</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -250,11 +283,24 @@
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                            <i class="fas fa-magic me-2"></i>Analyze Lesson Plan
-                        </button>
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-md-8">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                    <i class="fas fa-magic me-2"></i>Analyze Lesson Plan
+                                </button>
+                            </div>
+                        </div>
+                        {% if current_user.is_authenticated %}
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-success btn-lg" onclick="saveCurrentProfile()">
+                                    <i class="fas fa-save me-2"></i>Save Profile
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </form>
             </div>
@@ -297,6 +343,119 @@ function toggleCustomCategories(themeValue) {
     } else {
         customCategories.style.display = 'none';
     }
+}
+
+function loadSavedProfile() {
+    const profileSelect = document.getElementById('saved_profile');
+    const profileId = profileSelect.value;
+    
+    if (profileId) {
+        // Load profile data via AJAX
+        fetch(`/api/profile/${profileId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    populateFormFromProfile(data.profile);
+                    // Show custom parameters if needed
+                    document.getElementById('preset').value = 'custom';
+                    toggleCustomParameters();
+                } else {
+                    alert('Error loading profile: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading profile');
+            });
+    }
+}
+
+function populateFormFromProfile(profile) {
+    // Populate form fields from profile data
+    if (profile.pedagogical_approach) {
+        document.querySelector('[name="pedagogical_approach"]').value = profile.pedagogical_approach;
+    }
+    if (profile.engagement_level) {
+        document.querySelector('[name="engagement_level"]').value = profile.engagement_level;
+    }
+    if (profile.assessment_type) {
+        document.querySelector('[name="assessment_type"]').value = profile.assessment_type;
+    }
+    if (profile.differentiation) {
+        document.querySelector('[name="differentiation"]').value = profile.differentiation;
+    }
+    if (profile.language_focus) {
+        document.querySelector('[name="language_focus"]').value = profile.language_focus;
+    }
+    if (profile.age_group) {
+        document.querySelector('[name="age_group"]').value = profile.age_group;
+    }
+    if (profile.annotation_theme) {
+        document.querySelector('[name="annotation_theme"]').value = profile.annotation_theme;
+        toggleCustomCategories(profile.annotation_theme);
+    }
+    if (profile.custom_guidelines) {
+        document.querySelector('[name="custom_guidelines"]').value = profile.custom_guidelines;
+    }
+    
+    // Handle focus areas
+    if (profile.focus_areas) {
+        // Clear existing checkboxes
+        document.querySelectorAll('[name^="focus_area_"]').forEach(cb => cb.checked = false);
+        
+        // Check matching focus areas
+        profile.focus_areas.forEach((area, index) => {
+            const checkbox = document.querySelector(`[name="focus_area_${index + 1}"][value="${area}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+    
+    // Handle custom category definitions
+    if (profile.custom_category_definitions) {
+        Object.entries(profile.custom_category_definitions).forEach(([key, value]) => {
+            const input = document.querySelector(`[name="${key}_definition"]`);
+            if (input) {
+                input.value = value;
+            }
+        });
+    }
+}
+
+function saveCurrentProfile() {
+    const profileName = prompt('Enter a name for this profile:');
+    if (!profileName) return;
+    
+    const profileDescription = prompt('Enter a description (optional):') || '';
+    const setAsDefault = confirm('Set this as your default profile?');
+    
+    // Collect current form data
+    const formData = new FormData(document.getElementById('uploadForm'));
+    formData.append('profile_name', profileName);
+    formData.append('profile_description', profileDescription);
+    if (setAsDefault) {
+        formData.append('set_as_default', 'on');
+    }
+    
+    // Save profile via AJAX
+    fetch('/save_profile', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Profile saved successfully!');
+            location.reload(); // Refresh to show new profile in dropdown
+        } else {
+            alert('Error saving profile: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving profile');
+    });
 }
 
 document.getElementById('uploadForm').addEventListener('submit', function() {

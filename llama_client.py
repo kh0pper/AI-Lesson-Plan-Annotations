@@ -11,8 +11,22 @@ class LlamaAIClient:
     """Client for interacting with Llama AI API."""
     
     def __init__(self):
+        api_key = os.environ.get("LLAMA_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        
+        if not api_key or api_key.startswith("demo_key"):
+            raise ValueError(
+                "❌ AI API Key Required!\n\n"
+                "To use the AI annotation feature, you need a valid API key:\n"
+                "1. Get an OpenAI API key from: https://platform.openai.com/api-keys\n"
+                "2. Or get a Llama API key from: https://api.llama.com/\n"
+                "3. Edit the .env file and replace 'demo_key_replace_with_real_key' with your actual key\n"
+                "4. Restart the application\n\n"
+                "The app will work for user registration and profile management without an API key,\n"
+                "but PDF annotation requires a valid AI service key."
+            )
+        
         self.client = OpenAI(
-            api_key=os.environ.get("LLAMA_API_KEY"),
+            api_key=api_key,
             base_url="https://api.llama.com/compat/v1/",
         )
         self.model = "Llama-4-Maverick-17B-128E-Instruct-FP8"
@@ -44,9 +58,41 @@ class LlamaAIClient:
             }
             
         except Exception as e:
+            error_message = str(e)
+            
+            # Provide more helpful error messages for common issues
+            if "401" in error_message or "Authentication" in error_message:
+                error_message = (
+                    "❌ Invalid API Key!\n\n"
+                    "Your AI API key is not valid. Please:\n"
+                    "1. Check your API key at: https://platform.openai.com/api-keys\n"
+                    "2. Make sure you have credit/quota available\n"
+                    "3. Update the .env file with a valid key\n"
+                    "4. Restart the application\n\n"
+                    f"Original error: {error_message}"
+                )
+            elif "429" in error_message:
+                error_message = (
+                    "⏱️ Rate Limit Exceeded!\n\n"
+                    "You've hit the API rate limit. Please:\n"
+                    "1. Wait a few minutes before trying again\n"
+                    "2. Check your API quota at: https://platform.openai.com/usage\n"
+                    "3. Consider upgrading your API plan if needed\n\n"
+                    f"Original error: {error_message}"
+                )
+            elif "quota" in error_message.lower():
+                error_message = (
+                    "💳 Quota Exceeded!\n\n"
+                    "Your API quota has been exceeded. Please:\n"
+                    "1. Add credits to your account at: https://platform.openai.com/settings/organization/billing\n"
+                    "2. Check your usage at: https://platform.openai.com/usage\n"
+                    "3. Wait until your quota resets (if on free tier)\n\n"
+                    f"Original error: {error_message}"
+                )
+            
             return {
                 "success": False,
-                "error": str(e),
+                "error": error_message,
                 "annotations": None
             }
     

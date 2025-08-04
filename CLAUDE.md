@@ -2,128 +2,118 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Essential Commands
+## Project Overview
 
-### Development Environment Setup
+This is an AI-powered lesson plan annotation web application built with Flask. The app allows teachers to upload PDF lesson plans and receive AI-generated pedagogical insights and recommendations. It features user authentication, custom annotation profiles, subscription management, and multiple PDF output formats.
+
+## Key Commands
+
+### Development & Testing
 ```bash
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
+# Install dependencies (required before first run)
 pip install -r requirements.txt
 
-# Create required directories
-mkdir -p uploads downloads
+# Initialize database (run once after fresh clone)
+python3 init_db.py
+
+# Start the Flask application
+python3 app.py
+
+# Test template rendering (useful after making template changes)
+python3 test_template_render.py
+
+# Command line annotation (bypasses web interface)
+python3 lesson_annotator.py
 ```
 
-### Running the Application
+### Database Management
 ```bash
-# Start web application (preferred method)
-python run_app.py
+# Initialize fresh database
+python3 init_db.py
 
-# Alternative startup
-python app.py
-
-# Direct lesson annotation (CLI)
-python lesson_annotator.py
-```
-
-### Environment Configuration
-- Copy `.env.example` to `.env` and add your `LLAMA_API_KEY`
-- Web app runs on `http://localhost:5000`
-
-### PDF Generation Scripts
-```bash
-# Generate different annotation types from existing JSON results
-python create_pdf_from_json.py annotations_file.json        # Traditional
-python create_inline_pdf.py annotations_file.json           # Inline
-python create_overlay_pdf.py annotations_file.json          # Basic overlay
-python create_smart_overlay_pdf.py annotations_file.json                    # Smart overlay (recommended)  
-python create_smart_overlay_pdf.py annotations_file.json fonetica8.pdf vibrant  # With custom theme
-```
-
-### Testing
-```bash
-# Test server functionality
-python test_server.py
+# No migrations system - database schema changes require manual init_db.py run
 ```
 
 ## Architecture Overview
 
 ### Core Components
-This is a Flask-based AI lesson plan annotation system with multiple PDF output formats:
 
-- **Flask Web App** (`app.py`): Main web interface with file upload, parameter selection, and download management
-- **Lesson Annotator** (`lesson_annotator.py`): Core orchestration - coordinates PDF extraction, AI analysis, and multi-format output generation
-- **PDF Processing Pipeline**: 
-  - `pdf_extractor.py`: Extracts text and analyzes document structure
-  - Multiple annotation generators for different output styles
-- **AI Integration**: `llama_client.py` and `enhanced_llama_client.py` for Llama API communication
-- **Parameter System** (`annotation_parameters.py`): Preset configurations for different lesson types (kindergarten phonics, general K, Spanish literacy)
+**Flask Web Application** (`app.py`):
+- User authentication with Flask-Login
+- File upload handling with validation
+- Stripe integration for subscriptions
+- Rate limiting for free tier users
+- Profile management system
 
-### PDF Annotation Types
-The system generates four distinct annotation formats:
+**AI Integration** (`llama_client.py`, `demo_ai_client.py`):
+- Uses Llama API for lesson plan analysis
+- Factory pattern for client creation based on API key availability
+- Enhanced error handling with user-friendly messages
 
-1. **Smart Overlay** (`smart_overlay_annotator.py`): AI-powered layout analysis with intelligent positioning
-2. **Basic Overlay** (`pdf_overlay_annotator.py`): Visual overlays preserving original layout
-3. **Inline** (`inline_pdf_annotator.py`): Annotations integrated directly into lesson content
-4. **Traditional** (`pdf_annotator.py`): Original lesson + comprehensive analysis appendix
+**PDF Processing Pipeline**:
+1. `pdf_extractor.py` - Extract text and structure from uploaded PDFs
+2. `lesson_annotator.py` - Core orchestration of the annotation process
+3. Multiple PDF generators for different output formats:
+   - `pdf_annotator.py` - Traditional format (original + analysis)
+   - `inline_pdf_annotator.py` - Inline annotations within content
+   - `pdf_overlay_annotator.py` - Visual overlay annotations
+   - `smart_overlay_annotator.py` - Intelligent layout-aware overlays
+   - `combined_pdf_annotator.py` - Comprehensive multi-format output
 
-### Data Flow
-1. PDF upload → text extraction → structure analysis
-2. AI annotation generation using configurable parameters
-3. Parallel generation of all four annotation formats
-4. Results saved as JSON + multiple PDF outputs
+**Database Models** (`models.py`):
+- `User` - Authentication, subscription status, usage tracking
+- `AnnotationProfile` - Custom user annotation preferences
+- `UsageRecord` - Rate limiting and usage analytics
 
-### Parameter Presets
-- **kindergarten_phonics**: Multisensory learning focus, phonological awareness
-- **general_kindergarten**: Play-based learning, broad engagement
-- **spanish_literacy**: Balanced literacy approach for Spanish L1
-- **custom**: User-defined parameters via web form
+**Subscription System** (`stripe_integration.py`):
+- Stripe webhook handling for subscription lifecycle
+- Two-tier system: Free (1 profile, 5/hour) vs Premium (10 profiles, unlimited)
 
-### Color Themes for Smart Overlay
-The system supports customizable color schemes for smart overlay annotations:
-- **educational** (default): Educational psychology-based colors
-- **vibrant**: High contrast colors for maximum visibility
-- **pastel**: Soft, gentle colors for easy reading
-- **academic**: Professional academic color scheme
-- **monochrome**: Grayscale theme for printing
-- **warm**: Warm, inviting color palette
-- **cool**: Cool, calming color palette
-- **custom**: User-defined color categories and meanings
+### Configuration
 
-### User-Defined Color Significance
-When using the **custom** theme, users can define what each color represents:
-- The AI will categorize annotations according to user-defined meanings
-- 8 customizable categories with color-coded visual organization
-- Example: "Red = Critical Issues", "Green = Strengths", "Blue = Student Engagement"
-- Accessible via web interface custom parameters section
-- AI adapts annotation categorization to match user definitions
+**Environment Variables** (`.env`):
+- `LLAMA_API_KEY` - Required for AI functionality
+- `STRIPE_*` keys - Required for subscription features
+- `FLASK_SECRET_KEY` - Session management
 
-Configure via web interface or command line: `python create_smart_overlay_pdf.py file.json pdf.pdf theme_name`
+**Annotation Presets** (`annotation_parameters.py`):
+- Predefined parameter sets for different lesson types
+- Extensible system for custom annotation guidelines
 
-### File Organization
-- `uploads/`: Temporary file storage for processing
-- `downloads/`: Generated annotated PDFs and results
-- `templates/`: HTML templates for Flask web interface
-- `static/`: CSS and JavaScript assets
-- Auto-cleanup of temporary files after processing
+## Important Implementation Details
 
-## Important Notes
+### User Flow
+1. User registers/logs in via Flask-Login
+2. Uploads PDF (max 16MB, validated)
+3. Selects annotation preset or creates custom parameters
+4. System processes via AI client and generates multiple PDF formats
+5. User downloads annotated PDFs and can save profiles for reuse
 
-### API Requirements
-- Requires valid LLAMA_API_KEY in environment
-- Uses OpenAI-compatible client for Llama API access
-- Token usage tracked and reported in results
+### Rate Limiting
+- Free users: 5 annotations per hour via `flask-limiter`
+- Premium users: Unlimited access
+- Usage tracked in `UsageRecord` model
 
 ### File Handling
-- 16MB maximum upload size
-- PDF-only input format
-- Automatic filename sanitization and unique ID generation
-- Comprehensive error handling for PDF processing failures
+- Secure upload with `werkzeug.utils.secure_filename`
+- Temporary files in `uploads/` directory
+- Generated PDFs in `downloads/` directory
+- Automatic cleanup after processing
 
-### Development Considerations
-- All PDF generators inherit common patterns but implement different annotation strategies
-- Smart overlay annotator represents the most advanced output format with AI-driven layout analysis
-- Parameter system allows extensibility for new lesson types and annotation focuses
+### Error Handling
+- AI client provides detailed error messages for API issues
+- Template validation prevents Flask BuildError issues
+- Database relationship cascades handle user deletion
+
+### API Key Management
+- Factory pattern in `create_ai_client()` checks for valid keys
+- Demo mode removed - requires real API key to function
+- Clear error messages guide users to obtain proper credentials
+
+## Critical Notes
+
+- Database uses SQLite with no migration system - schema changes require `init_db.py`
+- Stripe webhooks must be configured for production subscription handling
+- All PDF processing is synchronous - consider async for large files
+- User profiles store JSON data for annotation parameters
+- Rate limiting uses in-memory storage - not suitable for multi-instance deployment

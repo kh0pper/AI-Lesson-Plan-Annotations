@@ -1,0 +1,25 @@
+# Stripe Configuration for Donations
+# Get these from your Stripe Dashboard at https://dashboard.stripe.com/
+
+# Test Keys (for development)
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Live Keys (for production - uncomment and use these instead)
+# STRIPE_PUBLISHABLE_KEY=pk_live_...
+# STRIPE_SECRET_KEY=sk_live_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Price ID for $5/month subscription (create this product in Stripe Dashboard)
+STRIPE_MONTHLY_PRICE_ID=price_...
+
+# OpenAI API Key
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Database URL (optional - defaults to SQLite)
+# DATABASE_URL=sqlite:///ai_annotator.db
+
+# Flask Configuration
+FLASK_SECRET_KEY=your-secret-key-change-this-in-production
+FLASK_ENV=development

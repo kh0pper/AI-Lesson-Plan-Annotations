@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Support AI Annotator - Donate{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-5">
+            <h1 class="display-4">💝 Support AI Lesson Plan Annotator</h1>
+            <p class="lead text-muted">
+                Help us keep improving AI-powered educational tools for teachers worldwide
+            </p>
+        </div>
+
+        <div class="row">
+            <!-- Free Tier -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-secondary">
+                    <div class="card-header bg-light text-center">
+                        <h4 class="mb-0">🆓 Free Tier</h4>
+                        <p class="text-muted mb-0">Always available</p>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <strong>1</strong> custom annotation profile
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <strong>5</strong> annotations per hour
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                All annotation formats (Smart Overlay, Inline, Traditional)
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Custom color themes
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                PDF downloads
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-footer text-center">
+                        <h3 class="text-success">$0/month</h3>
+                        {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-success">
+                            <i class="fas fa-user-plus me-2"></i>Get Started Free
+                        </a>
+                        {% elif not current_user.is_premium() %}
+                        <span class="badge bg-success p-2">Current Plan</span>
+                        {% else %}
+                        <span class="text-muted">Previous plan</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Premium Tier -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-primary shadow-lg">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h4 class="mb-0">⭐ Premium Supporter</h4>
+                        <p class="mb-0">Unlock full potential</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-heart me-2"></i>
+                            <strong>Your donation helps:</strong> Keep servers running, improve AI models, 
+                            and develop new features for educators worldwide.
+                        </div>
+                        
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                <strong>Up to 10</strong> custom annotation profiles
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                <strong>Unlimited</strong> annotations (no rate limits)
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                Priority processing (faster results)
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                Early access to new features
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                Support educational innovation
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <em>Everything from Free Tier</em>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-footer text-center">
+                        <h3 class="text-primary">$5/month</h3>
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.is_premium() %}
+                            <span class="badge bg-primary p-2">✅ Active Supporter</span>
+                            <div class="mt-2">
+                                <a href="{{ url_for('billing_portal') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-cog me-1"></i>Manage Billing
+                                </a>
+                            </div>
+                            {% else %}
+                            <form action="{{ url_for('create_checkout_session') }}" method="POST">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-heart me-2"></i>Become a Supporter
+                                </button>
+                            </form>
+                            <small class="text-muted mt-2 d-block">Cancel anytime, no commitment</small>
+                            {% endif %}
+                        {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In to Donate
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Stats for Current User -->
+        {% if current_user.is_authenticated %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Your Current Usage</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Profiles</h6>
+                                <h4 class="text-primary">{{ current_user.annotation_profiles|length }}/{{ current_user.get_profile_limit() }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">This Hour</h6>
+                                <h4 class="{% if current_user.get_usage_count_last_hour() >= current_user.get_hourly_usage_limit() %}text-danger{% else %}text-success{% endif %}">
+                                    {{ current_user.get_usage_count_last_hour() }}/{{ current_user.get_hourly_usage_limit() if not current_user.is_premium() else '∞' }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Account Type</h6>
+                                <h4 class="{% if current_user.is_premium() %}text-primary{% else %}text-secondary{% endif %}">
+                                    {% if current_user.is_premium() %}Premium{% else %}Free{% endif %}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Member Since</h6>
+                                <h4 class="text-info">{{ current_user.created_at.strftime('%b %Y') }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if not current_user.can_run_annotation() %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Rate limit reached:</strong> You've used all 5 annotations for this hour. 
+                    Premium supporters get unlimited usage!
+                </div>
+                {% endif %}
+                
+                {% if not current_user.can_create_profile() %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-bookmark me-2"></i>
+                    <strong>Profile limit reached:</strong> Free accounts can save 1 profile. 
+                    Premium supporters can save up to 10 profiles!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- FAQ Section -->
+        <div class="mt-5">
+            <h3 class="text-center mb-4">❓ Frequently Asked Questions</h3>
+            
+            <div class="accordion" id="donationFAQ">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            Why donations instead of paid subscriptions?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#donationFAQ">
+                        <div class="accordion-body">
+                            We believe educational tools should be accessible to all teachers. Donations help us 
+                            keep the basic features free while providing extra perks for supporters who help 
+                            sustain the project.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            Can I cancel my donation anytime?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#donationFAQ">
+                        <div class="accordion-body">
+                            Absolutely! You can cancel your monthly donation at any time through your billing 
+                            portal. You'll keep premium features until the end of your current billing period.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            What happens to my profiles if I stop donating?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#donationFAQ">
+                        <div class="accordion-body">
+                            Your profiles are never deleted! If you have more than 1 profile when your 
+                            donation ends, you'll still have access to all of them. You just won't be 
+                            able to create new ones until you're back to 1 profile.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                            Is my payment information secure?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#donationFAQ">
+                        <div class="accordion-body">
+                            Yes! All payments are processed securely through Stripe, a leading payment processor. 
+                            We never store your credit card information on our servers.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 mb-4">
+            <p class="text-muted">
+                <i class="fas fa-heart text-danger"></i>
+                Thank you for supporting educational innovation!
+            </p>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Annotator
+            </a>
+        </p>
+    </div>
+</div>
+{% endblock %}

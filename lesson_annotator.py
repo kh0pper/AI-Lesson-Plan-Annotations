@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from typing import Dict, Optional
 from pdf_extractor import PDFExtractor
-from llama_client import LlamaAIClient
+from demo_ai_client import create_ai_client
 from enhanced_llama_client import EnhancedLlamaAIClient
 from annotation_parameters import ParameterPresets, parameters_to_dict
 from pdf_annotator import PDFAnnotationGenerator
@@ -19,8 +19,11 @@ class LessonPlanAnnotator:
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
         self.pdf_extractor = PDFExtractor(pdf_path)
-        self.ai_client = LlamaAIClient()
-        self.enhanced_ai_client = EnhancedLlamaAIClient()
+        self.ai_client = create_ai_client()
+        try:
+            self.enhanced_ai_client = EnhancedLlamaAIClient()
+        except Exception:
+            self.enhanced_ai_client = None
         self.lesson_content = ""
         self.lesson_structure = {}
         self.annotations = {}

@@ -1,10 +1,52 @@
 # 🎓 AI Lesson Plan Annotator
 
-An intelligent web application that analyzes lesson plans using AI and provides comprehensive annotations and insights.
+An intelligent web application that analyzes lesson plans using AI and provides comprehensive annotations and insights with **user authentication**, **custom profiles**, and **premium donation tiers**.
+
+## 🚀 Quick Start
+
+**Can't connect to localhost? Follow these steps:**
+
+1. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Set up OpenAI API Key**
+   ```bash
+   cp env_example.txt .env
+   # Edit .env and add: OPENAI_API_KEY=your_key_here
+   ```
+
+3. **Initialize Database**
+   ```bash
+   python3 init_db.py
+   ```
+
+4. **Start Application**
+   ```bash
+   python3 app.py
+   ```
+
+5. **Visit**: http://localhost:5000
+
+📖 **Detailed Setup**: See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)
 
 ## ✨ Features
 
+### 🆓 Free Tier
 - **PDF Upload & Analysis**: Upload lesson plan PDFs and get AI-powered insights
+- **1 Custom Profile**: Save your annotation preferences
+- **5 Annotations/Hour**: Rate-limited usage
+- **All PDF Formats**: Smart Overlay, Inline, Traditional, and Comprehensive PDFs
+
+### ⭐ Premium Tier ($5/month donation)
+- **10 Custom Profiles**: Save multiple annotation configurations
+- **Unlimited Annotations**: No rate limits
+- **Priority Processing**: Faster results
+- **Billing Management**: Easy subscription control
+- **Support Education**: Help keep this tool free for all teachers
+
+### 📱 Core Features
 - **Smart Overlay Annotations** 🧠 **REVOLUTIONARY**: Intelligent layout-aware visual overlays with advanced positioning
 - **Overlay Annotations**: Visual overlays on the original PDF preserving exact layout
 - **Inline Annotations**: Annotations placed directly alongside lesson content for immediate use
