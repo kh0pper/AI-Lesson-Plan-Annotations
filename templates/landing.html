@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}AI Lesson Plan Annotator - Transform Your Teaching{% endblock %}
+
+{% block content %}
+<div class="hero-section py-5 mb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">🎓 AI Lesson Plan Annotator</h1>
+                <p class="lead mb-4">Transform your lesson plans with intelligent AI-powered annotations and pedagogical insights. Get personalized recommendations that enhance student engagement and learning outcomes.</p>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-4">
+                        <i class="fas fa-user-plus me-2"></i>Get Started Free
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="feature-showcase">
+                    <div class="card bg-white bg-opacity-10 border-0 text-white p-4">
+                        <div class="card-body">
+                            <i class="fas fa-magic fa-3x mb-3 text-warning"></i>
+                            <h4>Smart PDF Analysis</h4>
+                            <p>Upload your lesson plans and receive comprehensive AI-generated insights in multiple formats</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Features Overview -->
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="display-5 fw-bold">✨ What You Get</h2>
+            <p class="lead text-muted">Comprehensive AI-powered analysis that transforms your lesson plans</p>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-brain fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Smart Overlay Annotations</h5>
+                    <p class="card-text">Intelligent layout-aware visual overlays that preserve your original document while adding valuable insights.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-user-graduate fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Engagement Strategies</h5>
+                    <p class="card-text">Get specific recommendations to boost student participation and interactive learning opportunities.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-chart-line fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title">Assessment Insights</h5>
+                    <p class="card-text">Formative and summative assessment strategies tailored to your lesson objectives and student needs.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-puzzle-piece fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Differentiation Support</h5>
+                    <p class="card-text">Multi-level accommodation strategies to meet diverse learning styles and abilities in your classroom.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Tiers -->
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="display-5 fw-bold">🚀 Choose Your Plan</h2>
+            <p class="lead text-muted">Start free and upgrade when you're ready for more</p>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-2 border-primary">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="card-title mb-0">🆓 Free Tier</h3>
+                    <p class="mb-0 mt-2">Perfect for trying out the tool</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <span class="display-4 fw-bold">$0</span>
+                        <span class="text-muted">/month</span>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>1 Custom Profile</strong> - Save your annotation preferences</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>5 Annotations/Hour</strong> - Rate-limited usage</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>All PDF Formats</strong> - Smart Overlay, Inline, Traditional</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>Web Interface</strong> - User-friendly upload and processing</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>AI Analysis</strong> - Comprehensive pedagogical insights</li>
+                    </ul>
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-rocket me-2"></i>Start Free Today
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-2 border-warning shadow-lg position-relative">
+                <div class="badge bg-warning text-dark position-absolute top-0 start-50 translate-middle px-3 py-2 rounded-pill">
+                    ⭐ Most Popular
+                </div>
+                <div class="card-header bg-warning text-dark text-center py-3">
+                    <h3 class="card-title mb-0 fw-bold">⭐ Premium Tier</h3>
+                    <p class="mb-0 mt-2">Support education & unlock full potential</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <span class="display-4 fw-bold">$5</span>
+                        <span class="text-muted">/month</span>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-crown text-warning me-2"></i><strong>10 Custom Profiles</strong> - Multiple annotation configurations</li>
+                        <li class="mb-2"><i class="fas fa-infinity text-warning me-2"></i><strong>Unlimited Annotations</strong> - No rate limits</li>
+                        <li class="mb-2"><i class="fas fa-bolt text-warning me-2"></i><strong>Priority Processing</strong> - Faster results</li>
+                        <li class="mb-2"><i class="fas fa-credit-card text-warning me-2"></i><strong>Billing Management</strong> - Easy subscription control</li>
+                        <li class="mb-2"><i class="fas fa-heart text-warning me-2"></i><strong>Support Education</strong> - Help keep this tool free for all teachers</li>
+                    </ul>
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg w-100 text-dark fw-bold">
+                            <i class="fas fa-star me-2"></i>Become a Supporter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="display-5 fw-bold">📋 How It Works</h2>
+            <p class="lead text-muted">Simple 4-step process to transform your lesson plans</p>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4 text-center">
+            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold fs-4">1</span>
+            </div>
+            <h5>📁 Upload PDF</h5>
+            <p class="text-muted">Upload your lesson plan PDF (up to 16MB)</p>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4 text-center">
+            <div class="step-number bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold fs-4">2</span>
+            </div>
+            <h5>⚙️ Choose Settings</h5>
+            <p class="text-muted">Select preset or customize annotation parameters</p>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4 text-center">
+            <div class="step-number bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold fs-4">3</span>
+            </div>
+            <h5>🤖 AI Analysis</h5>
+            <p class="text-muted">Our AI analyzes and generates comprehensive insights</p>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4 text-center">
+            <div class="step-number bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                <span class="fw-bold fs-4">4</span>
+            </div>
+            <h5>📥 Download</h5>
+            <p class="text-muted">Get annotated PDFs with actionable recommendations</p>
+        </div>
+    </div>
+
+    <!-- Sample Output -->
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-4">
+            <h2 class="display-5 fw-bold">📊 Sample Annotations</h2>
+            <p class="lead text-muted">See what kind of insights you'll receive</p>
+        </div>
+        
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-primary mb-3">📚 Pedagogical Strengths</h5>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2">• <strong>Clear learning objectives</strong>: Well-defined, age-appropriate goals for kindergarten Spanish phonics</li>
+                        <li class="mb-2">• <strong>Structured progression</strong>: Activities build systematically from recognition to production</li>
+                        <li class="mb-2">• <strong>Multi-sensory approach</strong>: Incorporates visual, auditory, and kinesthetic learning elements</li>
+                    </ul>
+                    
+                    <h5 class="card-title text-success mb-3">🎯 Student Engagement Opportunities</h5>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2">• <strong>Interactive games</strong>: Include more hands-on phonetic games and movement activities</li>
+                        <li class="mb-2">• <strong>Peer collaboration</strong>: Add partner work for practicing letter sounds together</li>
+                        <li class="mb-2">• <strong>Technology integration</strong>: Consider using educational apps for sound recognition</li>
+                    </ul>
+                    
+                    <div class="text-center">
+                        <p class="text-muted fst-italic">...and much more detailed analysis!</p>
+                        <a href="{{ url_for('register') }}" class="btn btn-primary">
+                            <i class="fas fa-play me-2"></i>Try It Yourself
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-gradient text-white text-center p-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body">
+                    <h2 class="display-5 fw-bold mb-4">Ready to Transform Your Teaching?</h2>
+                    <p class="lead mb-4">Join educators who are already using AI to enhance their lesson plans and improve student outcomes.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5">
+                            <i class="fas fa-rocket me-2"></i>Start Free Today
+                        </a>
+                        <a href="{{ url_for('donate') }}" class="btn btn-outline-light btn-lg px-5">
+                            <i class="fas fa-heart me-2"></i>Learn About Premium
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hero-section {
+    min-height: 60vh;
+}
+
+.feature-showcase .card {
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease;
+}
+
+.feature-showcase .card:hover {
+    transform: translateY(-5px);
+}
+
+.step-number {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+</style>
+{% endblock %}

@@ -51,27 +51,38 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-    """Main upload page."""
+    """Landing page for anonymous users, upload page for authenticated users."""
+    if not current_user.is_authenticated:
+        # Show landing page for anonymous users
+        return render_template('landing.html', stripe_public_key=get_stripe_public_key())
+    
+    # Show upload interface for authenticated users
     presets = ParameterPresets.get_available_presets()
     user_profiles = []
     
     # Load user's saved profiles if logged in
-    if current_user.is_authenticated:
-        user_profiles = AnnotationProfile.query.filter_by(user_id=current_user.id).order_by(AnnotationProfile.is_default.desc(), AnnotationProfile.name).all()
-        
-        # Auto-load default profile if exists
-        default_profile = next((p for p in user_profiles if p.is_default), None)
-        if default_profile:
-            session['default_profile_data'] = default_profile.to_dict()
+    user_profiles = AnnotationProfile.query.filter_by(user_id=current_user.id).order_by(AnnotationProfile.is_default.desc(), AnnotationProfile.name).all()
+    
+    # Auto-load default profile if exists
+    default_profile = next((p for p in user_profiles if p.is_default), None)
+    if default_profile:
+        session['default_profile_data'] = default_profile.to_dict()
     
     return render_template('index.html', presets=presets, user_profiles=user_profiles)
 
+@app.route('/app')
+@login_required
+def app_interface():
+    """Upload interface for authenticated users (alternative route)."""
+    return redirect(url_for('index'))
+
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_file():
     """Handle file upload and annotation parameters."""
     
     # Check rate limits for logged-in users
-    if current_user.is_authenticated and not current_user.can_run_annotation():
+    if not current_user.can_run_annotation():
         flash(f'Rate limit exceeded. Free accounts can run {current_user.get_hourly_usage_limit()} annotations per hour. Consider becoming a premium supporter for unlimited usage!')
         return redirect(url_for('donate'))
     
@@ -590,4 +601,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
