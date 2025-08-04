@@ -17,9 +17,23 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key-change-this-in-production')
 
 # Database configuration
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "ai_annotator.db")}'
+def get_database_url():
+    """Get database URL with fallback for different environments."""
+    # Check for PostgreSQL URL (Render, Heroku, etc.)
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        # Handle PostgreSQL URL format differences
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        return database_url
+    
+    # Fallback to SQLite for local development
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    return f'sqlite:///{os.path.join(basedir, "ai_annotator.db")}'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = get_database_url()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+print(f"🗄️ Database URL: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -312,13 +326,32 @@ def register():
     
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
-        user.set_password(form.password.data)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash(f'Account created successfully for {form.username.data}!')
-        return redirect(url_for('login'))
+        try:
+            # Check if user already exists
+            existing_user = User.query.filter(
+                (User.username == form.username.data) | 
+                (User.email == form.email.data)
+            ).first()
+            
+            if existing_user:
+                flash('Username or email already exists. Please choose different ones.')
+                return render_template('register.html', form=form)
+            
+            # Create new user
+            user = User(username=form.username.data, email=form.email.data)
+            user.set_password(form.password.data)
+            db.session.add(user)
+            db.session.commit()
+            
+            print(f"✅ New user registered: {user.username} ({user.email})")
+            flash(f'Account created successfully for {form.username.data}!')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Registration error: {e}")
+            flash('Error creating account. Please try again.')
+            return render_template('register.html', form=form)
     
     return render_template('register.html', form=form)
 
@@ -851,13 +884,23 @@ def admin_revoke_access():
     })
 
 
+def init_database():
+    """Initialize database tables."""
+    try:
+        with app.app_context():
+            db.create_all()
+            print("✅ Database tables created successfully")
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
+        raise
+
+# Initialize database on startup (for both development and production)
+init_database()
+
 if __name__ == '__main__':
-    # Create database tables if they don't exist
-    with app.app_context():
-        db.create_all()
-    
     # Use PORT environment variable for deployment (Render, Heroku, etc.)
     port = int(os.environ.get('PORT', 5001))
     debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
     
+    print(f"🚀 Starting server on port {port}, debug={debug_mode}")
     app.run(debug=debug_mode, host='0.0.0.0', port=port)
