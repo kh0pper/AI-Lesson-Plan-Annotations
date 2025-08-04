@@ -549,17 +549,33 @@ def donation_success():
 def billing_portal():
     """Redirect to Stripe billing portal."""
     try:
+        print(f"🔗 Billing portal requested for user: {current_user.username}")
+        print(f"📧 User email: {current_user.email}")
+        print(f"🆔 Stripe customer ID: {current_user.stripe_customer_id}")
+        print(f"📊 Subscription status: {current_user.subscription_status}")
+        
+        if not current_user.stripe_customer_id:
+            print("❌ No Stripe customer ID found")
+            flash('No billing information found. Please subscribe first.')
+            return redirect(url_for('donate'))
+        
         return_url = url_for('donate', _external=True)
+        print(f"🔄 Return URL: {return_url}")
+        
         portal_session = StripeService.create_billing_portal_session(current_user, return_url)
         
         if portal_session:
+            print(f"✅ Portal session created: {portal_session.url}")
             return redirect(portal_session.url, code=303)
         else:
+            print("❌ Portal session creation failed")
             flash('Error accessing billing portal. Please contact support.')
             return redirect(url_for('donate'))
             
     except Exception as e:
-        current_app.logger.error(f"Billing portal error: {e}")
+        print(f"❌ Billing portal error: {e}")
+        import traceback
+        traceback.print_exc()
         flash('Error accessing billing portal. Please try again.')
         return redirect(url_for('donate'))
 
@@ -567,43 +583,65 @@ def billing_portal():
 @app.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
     """Handle Stripe webhooks."""
-    payload = request.get_data(as_text=True)
-    sig_header = request.headers.get('Stripe-Signature')
+    print("🔗 Webhook received")
     
     try:
+        payload = request.get_data(as_text=True)
+        sig_header = request.headers.get('Stripe-Signature')
+        
+        print(f"📝 Payload length: {len(payload)}")
+        print(f"🔐 Signature header: {'Present' if sig_header else 'Missing'}")
+        
         # For debugging - skip signature verification if webhook secret is not set
         webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+        print(f"🗝️ Webhook secret: {'Set' if webhook_secret and webhook_secret != 'whsec_demo_key_for_testing' else 'Demo/Missing'}")
+        
         if webhook_secret and webhook_secret != 'whsec_demo_key_for_testing':
             # Verify webhook signature
             event = stripe.Webhook.construct_event(
                 payload, sig_header, webhook_secret
             )
+            print("✅ Signature verified")
         else:
             # Parse JSON directly for testing
             event = json.loads(payload)
+            print("⚠️ Skipping signature verification (demo mode)")
+        
+        print(f"📊 Event type: {event.get('type', 'Unknown')}")
         
         # Handle different event types
         if event['type'] == 'customer.subscription.created':
-            StripeService.handle_subscription_created(event['data']['object'])
+            print("🎯 Processing subscription.created")
+            result = StripeService.handle_subscription_created(event['data']['object'])
+            print(f"📄 Handler result: {result}")
         elif event['type'] == 'customer.subscription.updated':
+            print("🎯 Processing subscription.updated")
             StripeService.handle_subscription_updated(event['data']['object'])
         elif event['type'] == 'customer.subscription.deleted':
+            print("🎯 Processing subscription.deleted")
             StripeService.handle_subscription_deleted(event['data']['object'])
         elif event['type'] == 'invoice.payment_succeeded':
+            print("🎯 Processing payment.succeeded")
             StripeService.handle_invoice_payment_succeeded(event['data']['object'])
         elif event['type'] == 'invoice.payment_failed':
+            print("🎯 Processing payment.failed")
             StripeService.handle_invoice_payment_failed(event['data']['object'])
+        else:
+            print(f"⚠️ Unhandled event type: {event['type']}")
         
+        print("✅ Webhook processed successfully")
         return jsonify({'status': 'success'})
         
     except ValueError as e:
-        print(f"Invalid payload: {e}")
+        print(f"❌ Invalid payload: {e}")
         return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
-        print(f"Invalid signature: {e}")
+        print(f"❌ Invalid signature: {e}")
         return jsonify({'error': 'Invalid signature'}), 400
     except Exception as e:
-        print(f"Webhook error: {e}")
+        print(f"❌ Webhook error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': 'Webhook error'}), 500
 
 

@@ -77,18 +77,31 @@ class StripeService:
     def create_billing_portal_session(user, return_url):
         """Create a billing portal session for subscription management."""
         try:
+            print(f"🏗️ Creating billing portal for customer: {user.stripe_customer_id}")
+            
             if not user.stripe_customer_id:
+                print("❌ No stripe_customer_id provided")
                 return None
+            
+            # Check current Stripe API key
+            api_key = stripe.api_key
+            print(f"🔑 Using Stripe API key: {api_key[0:7]}...{api_key[-4:] if api_key else 'None'}")
             
             portal_session = stripe.billing_portal.Session.create(
                 customer=user.stripe_customer_id,
                 return_url=return_url,
             )
             
+            print(f"✅ Portal session created successfully: {portal_session.id}")
             return portal_session
             
         except stripe.error.StripeError as e:
-            print(f"Stripe billing portal creation failed: {e}")
+            print(f"❌ Stripe billing portal creation failed: {e}")
+            print(f"   Error type: {type(e).__name__}")
+            print(f"   Error code: {getattr(e, 'code', 'N/A')}")
+            return None
+        except Exception as e:
+            print(f"❌ Unexpected error creating billing portal: {e}")
             return None
     
     @staticmethod
@@ -111,10 +124,12 @@ class StripeService:
                     )
                 
                 db.session.commit()
-                current_app.logger.info(f"User {user.username} subscription activated")
+                print(f"✅ User {user.username} subscription activated")
+                return True
                 
         except Exception as e:
-            current_app.logger.error(f"Error handling subscription created: {e}")
+            print(f"❌ Error handling subscription created: {e}")
+            return False
     
     @staticmethod
     def handle_subscription_updated(subscription):
@@ -136,10 +151,10 @@ class StripeService:
                     user.last_payment = datetime.utcnow()
                 
                 db.session.commit()
-                current_app.logger.info(f"User {user.username} subscription updated to {subscription['status']}")
+                print(f"✅ User {user.username} subscription updated to {subscription['status']}")
                 
         except Exception as e:
-            current_app.logger.error(f"Error handling subscription updated: {e}")
+            print(f"❌ Error handling subscription updated: {e}")
     
     @staticmethod
     def handle_subscription_deleted(subscription):
@@ -153,10 +168,10 @@ class StripeService:
                 user.subscription_end = datetime.utcnow()
                 
                 db.session.commit()
-                current_app.logger.info(f"User {user.username} subscription canceled")
+                print(f"✅ User {user.username} subscription canceled")
                 
         except Exception as e:
-            current_app.logger.error(f"Error handling subscription deleted: {e}")
+            print(f"❌ Error handling subscription deleted: {e}")
     
     @staticmethod
     def handle_invoice_payment_succeeded(invoice):
@@ -170,10 +185,10 @@ class StripeService:
                 user.subscription_status = 'active'
                 
                 db.session.commit()
-                current_app.logger.info(f"Payment succeeded for user {user.username}")
+                print(f"✅ Payment succeeded for user {user.username}")
                 
         except Exception as e:
-            current_app.logger.error(f"Error handling payment succeeded: {e}")
+            print(f"❌ Error handling payment succeeded: {e}")
     
     @staticmethod
     def handle_invoice_payment_failed(invoice):
@@ -185,10 +200,10 @@ class StripeService:
             if user:
                 user.subscription_status = 'past_due'
                 db.session.commit()
-                current_app.logger.warning(f"Payment failed for user {user.username}")
+                print(f"⚠️ Payment failed for user {user.username}")
                 
         except Exception as e:
-            current_app.logger.error(f"Error handling payment failed: {e}")
+            print(f"❌ Error handling payment failed: {e}")
 
 
 def get_stripe_public_key():
