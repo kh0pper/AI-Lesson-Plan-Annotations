@@ -9,8 +9,8 @@ import json
 
 from lesson_annotator import LessonPlanAnnotator
 from annotation_parameters import ParameterPresets, AnnotationParameters, parameters_to_dict
-from models import db, User, AnnotationProfile, UsageRecord
-from forms import RegistrationForm, LoginForm, ProfileForm
+from models import db, User, AnnotationProfile, UsageRecord, FeedbackReport
+from forms import RegistrationForm, LoginForm, ProfileForm, FeedbackForm
 from stripe_integration import StripeService, get_stripe_public_key
 
 app = Flask(__name__)
@@ -538,6 +538,59 @@ def delete_profile(profile_id):
     return redirect(url_for('profiles'))
 
 
+# Feedback Routes
+@app.route('/feedback', methods=['GET', 'POST'])
+@login_required
+def feedback():
+    """Submit feedback, bug reports, and feature requests."""
+    form = FeedbackForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Capture browser information
+            browser_info = request.headers.get('User-Agent', '')
+            
+            # Create feedback report
+            feedback_report = FeedbackReport(
+                user_id=current_user.id,
+                report_type=form.report_type.data,
+                title=form.title.data,
+                description=form.description.data,
+                priority=form.priority.data,
+                steps_to_reproduce=form.steps_to_reproduce.data if form.steps_to_reproduce.data else None,
+                error_details=form.error_details.data if form.error_details.data else None,
+                browser_info=browser_info
+            )
+            
+            db.session.add(feedback_report)
+            db.session.commit()
+            
+            # Log the feedback submission
+            report_type_display = dict(form.report_type.choices)[form.report_type.data]
+            print(f"📝 FEEDBACK: {current_user.username} submitted {form.report_type.data}: {form.title.data}")
+            
+            flash(f'Thank you for your feedback! Your {report_type_display.lower()} has been submitted and will be reviewed by our team.')
+            return redirect(url_for('index'))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Feedback submission error: {e}")
+            flash('Error submitting feedback. Please try again.')
+    
+    return render_template('feedback.html', form=form)
+
+
+@app.route('/my-feedback')
+@login_required
+def my_feedback():
+    """Display user's submitted feedback reports."""
+    reports = FeedbackReport.query.filter_by(user_id=current_user.id).order_by(
+        FeedbackReport.created_at.desc()
+    ).all()
+    
+    return render_template('my_feedback.html', reports=reports)
+
+
 # Stripe/Donation Routes
 @app.route('/donate')
 def donate():
@@ -881,6 +934,89 @@ def admin_revoke_access():
         'user': user.username,
         'email': user.email,
         'new_status': 'free'
+    })
+
+@app.route('/admin/feedback', methods=['GET'])
+def admin_list_feedback():
+    """Admin API endpoint to list feedback reports."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    # Get query parameters for filtering
+    status_filter = request.args.get('status', '')
+    priority_filter = request.args.get('priority', '')
+    type_filter = request.args.get('type', '')
+    
+    # Build query
+    query = FeedbackReport.query
+    
+    if status_filter:
+        query = query.filter(FeedbackReport.status == status_filter)
+    if priority_filter:
+        query = query.filter(FeedbackReport.priority == priority_filter)
+    if type_filter:
+        query = query.filter(FeedbackReport.report_type == type_filter)
+    
+    # Order by priority and date
+    priority_order = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1}
+    reports = query.order_by(
+        FeedbackReport.status.asc(),  # Open first
+        db.case(priority_order, value=FeedbackReport.priority).desc(),
+        FeedbackReport.created_at.desc()
+    ).all()
+    
+    feedback_list = []
+    for report in reports:
+        feedback_list.append(report.to_dict())
+    
+    return jsonify({
+        'feedback': feedback_list,
+        'total': len(feedback_list)
+    })
+
+@app.route('/admin/feedback/<int:feedback_id>', methods=['PUT', 'POST'])
+def admin_update_feedback(feedback_id):
+    """Admin API endpoint to update feedback status and notes."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    data = request.get_json()
+    
+    report = FeedbackReport.query.get(feedback_id)
+    if not report:
+        return jsonify({'error': 'Feedback report not found'}), 404
+    
+    # Update fields
+    if 'status' in data:
+        old_status = report.status
+        report.status = data['status']
+        if data['status'] == 'resolved' and old_status != 'resolved':
+            report.resolved_at = datetime.utcnow()
+        elif data['status'] != 'resolved':
+            report.resolved_at = None
+    
+    if 'admin_notes' in data:
+        report.admin_notes = data['admin_notes']
+    
+    if 'assigned_to' in data:
+        report.assigned_to = data['assigned_to']
+    
+    if 'priority' in data:
+        report.priority = data['priority']
+    
+    report.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    # Log the admin action
+    admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+    print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) updated feedback #{feedback_id}: {report.title}")
+    
+    return jsonify({
+        'success': True,
+        'feedback': report.to_dict()
     })
 
 

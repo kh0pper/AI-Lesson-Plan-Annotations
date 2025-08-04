@@ -24,6 +24,24 @@
                 All actions are logged. Unauthorized access is prohibited.
             </div>
             
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                        <i class="fas fa-users me-1"></i>User Management
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="feedback-tab" data-bs-toggle="tab" data-bs-target="#feedback" type="button" role="tab">
+                        <i class="fas fa-comment-dots me-1"></i>Feedback & Reports
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="adminTabContent">
+                <!-- Users Tab -->
+                <div class="tab-pane fade show active" id="users" role="tabpanel">
+            
             <!-- User List - moved to top for easier browsing -->
             <div class="card mb-5">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -110,6 +128,69 @@
         </div>
     </div>
 </div>
+
+                </div> <!-- End Users Tab -->
+                
+                <!-- Feedback Tab -->
+                <div class="tab-pane fade" id="feedback" role="tabpanel">
+                    <!-- Feedback Management Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-comment-dots me-2"></i>Feedback & Bug Reports
+                            </h3>
+                            <button class="btn btn-dark btn-sm" onclick="loadFeedback()">
+                                <i class="fas fa-refresh me-1"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Feedback Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <select class="form-control" id="statusFilter" onchange="filterFeedback()">
+                                        <option value="">All Status</option>
+                                        <option value="open">Open</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="resolved">Resolved</option>
+                                        <option value="closed">Closed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control" id="priorityFilter" onchange="filterFeedback()">
+                                        <option value="">All Priority</option>
+                                        <option value="critical">Critical</option>
+                                        <option value="high">High</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control" id="typeFilter" onchange="filterFeedback()">
+                                        <option value="">All Types</option>
+                                        <option value="bug">Bugs</option>
+                                        <option value="feature_request">Features</option>
+                                        <option value="improvement">Improvements</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="feedbackSearch" placeholder="Search feedback..." onkeyup="filterFeedback()">
+                                </div>
+                            </div>
+                            
+                            <div id="feedbackList">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading feedback...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Feedback Tab -->
+                
+            </div> <!-- End Tab Content -->
 
 <!-- Alert Modal -->
 <div class="modal fade" id="alertModal" tabindex="-1">
@@ -350,8 +431,192 @@ function filterUsers() {
     }
 }
 
+// Global variables for feedback
+let allFeedback = [];
+
+// Load feedback list
+async function loadFeedback() {
+    try {
+        const response = await fetch('/admin/feedback', {
+            headers: {
+                'Admin-Key': ADMIN_KEY
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.feedback) {
+            allFeedback = result.feedback;
+            displayFeedback(allFeedback);
+        } else {
+            document.getElementById('feedbackList').innerHTML = 
+                '<div class="alert alert-danger">Failed to load feedback: ' + (result.error || 'Unknown error') + '</div>';
+        }
+    } catch (error) {
+        document.getElementById('feedbackList').innerHTML = 
+            '<div class="alert alert-danger">Network error: ' + error.message + '</div>';
+    }
+}
+
+// Display feedback in cards
+function displayFeedback(feedback) {
+    const feedbackList = document.getElementById('feedbackList');
+    
+    if (feedback.length === 0) {
+        feedbackList.innerHTML = '<div class="alert alert-info">No feedback reports found.</div>';
+        return;
+    }
+    
+    let html = '<div class="row">';
+    
+    feedback.forEach(report => {
+        html += `
+            <div class="col-lg-6 mb-3">
+                <div class="card feedback-card" data-id="${report.id}">
+                    <div class="card-header d-flex justify-content-between align-items-start">
+                        <div>
+                            ${getTypeBadge(report.report_type)}
+                            ${getPriorityBadge(report.priority)}
+                        </div>
+                        <div>
+                            ${getStatusBadge(report.status)}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">${report.title}</h6>
+                        <p class="card-text small text-muted">
+                            <i class="fas fa-user me-1"></i>${report.user.username} (${report.user.access_type})
+                            <br><i class="fas fa-calendar me-1"></i>${report.created_at}
+                        </p>
+                        <p class="card-text">${report.description.substring(0, 150)}${report.description.length > 150 ? '...' : ''}</p>
+                        
+                        ${report.steps_to_reproduce ? `<small><strong>Steps:</strong> ${report.steps_to_reproduce.substring(0, 100)}...</small><br>` : ''}
+                        ${report.error_details ? `<small><strong>Error:</strong> ${report.error_details.substring(0, 100)}...</small><br>` : ''}
+                        
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="manageFeedback(${report.id})">
+                                <i class="fas fa-cog me-1"></i>Manage
+                            </button>
+                        </div>
+                        
+                        ${report.admin_notes ? `
+                        <div class="alert alert-info mt-2 mb-0">
+                            <small><strong>Admin Notes:</strong> ${report.admin_notes}</small>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    feedbackList.innerHTML = html;
+}
+
+// Filter feedback
+function filterFeedback() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const priorityFilter = document.getElementById('priorityFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const searchTerm = document.getElementById('feedbackSearch').value.toLowerCase();
+    
+    let filteredFeedback = allFeedback.filter(report => {
+        const matchesStatus = !statusFilter || report.status === statusFilter;
+        const matchesPriority = !priorityFilter || report.priority === priorityFilter;
+        const matchesType = !typeFilter || report.report_type === typeFilter;
+        const matchesSearch = !searchTerm || 
+            report.title.toLowerCase().includes(searchTerm) ||
+            report.description.toLowerCase().includes(searchTerm) ||
+            report.user.username.toLowerCase().includes(searchTerm);
+        
+        return matchesStatus && matchesPriority && matchesType && matchesSearch;
+    });
+    
+    displayFeedback(filteredFeedback);
+}
+
+// Get badge HTML for feedback types, priorities, and statuses
+function getTypeBadge(type) {
+    const badges = {
+        'bug': '<span class="badge bg-danger"><i class="fas fa-bug me-1"></i>Bug</span>',
+        'feature_request': '<span class="badge bg-success"><i class="fas fa-lightbulb me-1"></i>Feature</span>',
+        'improvement': '<span class="badge bg-primary"><i class="fas fa-arrow-up me-1"></i>Improvement</span>',
+        'other': '<span class="badge bg-secondary"><i class="fas fa-comment me-1"></i>Other</span>'
+    };
+    return badges[type] || `<span class="badge bg-light text-dark">${type}</span>`;
+}
+
+function getPriorityBadge(priority) {
+    const badges = {
+        'low': '<span class="badge bg-light text-dark">Low</span>',
+        'medium': '<span class="badge bg-info">Medium</span>',
+        'high': '<span class="badge bg-warning text-dark">High</span>',
+        'critical': '<span class="badge bg-danger">Critical</span>'
+    };
+    return badges[priority] || `<span class="badge bg-light text-dark">${priority}</span>`;
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'open': '<span class="badge bg-primary">Open</span>',
+        'in_progress': '<span class="badge bg-warning text-dark">In Progress</span>',
+        'resolved': '<span class="badge bg-success">Resolved</span>',
+        'closed': '<span class="badge bg-secondary">Closed</span>'
+    };
+    return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
+}
+
+// Manage feedback (simple implementation - could be enhanced with a modal)
+function manageFeedback(feedbackId) {
+    const report = allFeedback.find(r => r.id === feedbackId);
+    if (!report) return;
+    
+    const newStatus = prompt(`Update status for "${report.title}":\n\nCurrent: ${report.status}\n\nEnter new status (open, in_progress, resolved, closed):`, report.status);
+    if (!newStatus || newStatus === report.status) return;
+    
+    const adminNotes = prompt('Add admin notes (optional):', report.admin_notes || '');
+    
+    updateFeedbackStatus(feedbackId, newStatus, adminNotes);
+}
+
+// Update feedback status via API
+async function updateFeedbackStatus(feedbackId, status, adminNotes) {
+    try {
+        const response = await fetch(`/admin/feedback/${feedbackId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                status: status,
+                admin_notes: adminNotes
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', `Feedback updated successfully`, 'success');
+            loadFeedback(); // Refresh feedback list
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to update feedback: ' + error.message, 'danger');
+    }
+}
+
 // Load users on page load
 document.addEventListener('DOMContentLoaded', loadUsers);
+
+// Load feedback when feedback tab is shown
+document.getElementById('feedback-tab').addEventListener('shown.bs.tab', function() {
+    if (allFeedback.length === 0) {
+        loadFeedback();
+    }
+});
 </script>
 
 <style>
@@ -366,6 +631,31 @@ document.addEventListener('DOMContentLoaded', loadUsers);
 .spinner-border {
     width: 3rem;
     height: 3rem;
+}
+
+.feedback-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feedback-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
 }
 </style>
 {% endblock %}

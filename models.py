@@ -33,6 +33,7 @@ class User(UserMixin, db.Model):
     # Relationships
     annotation_profiles = db.relationship('AnnotationProfile', backref='user', lazy=True, cascade='all, delete-orphan')
     usage_records = db.relationship('UsageRecord', backref='user', lazy=True, cascade='all, delete-orphan')
+    feedback_reports = db.relationship('FeedbackReport', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
         """Hash and set password."""
@@ -199,3 +200,86 @@ class UsageRecord(db.Model):
     
     def __repr__(self):
         return f'<UsageRecord user={self.user.username} at {self.created_at}>'
+
+
+class FeedbackReport(db.Model):
+    """Model for storing user feedback, bug reports, and feature requests."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Report details
+    report_type = db.Column(db.String(20), nullable=False)  # bug, feature_request, improvement, other
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    priority = db.Column(db.String(10), default='medium')  # low, medium, high, critical
+    
+    # Admin fields
+    status = db.Column(db.String(20), default='open')  # open, in_progress, resolved, closed
+    admin_notes = db.Column(db.Text)
+    assigned_to = db.Column(db.String(100))  # admin email or name
+    resolved_at = db.Column(db.DateTime)
+    
+    # Optional technical details
+    browser_info = db.Column(db.String(500))
+    error_details = db.Column(db.Text)
+    steps_to_reproduce = db.Column(db.Text)
+    
+    def to_dict(self):
+        """Convert feedback report to dictionary."""
+        return {
+            'id': self.id,
+            'user': {
+                'username': self.user.username,
+                'email': self.user.email,
+                'access_type': self.user.get_access_type()
+            },
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'report_type': self.report_type,
+            'title': self.title,
+            'description': self.description,
+            'priority': self.priority,
+            'status': self.status,
+            'admin_notes': self.admin_notes,
+            'assigned_to': self.assigned_to,
+            'resolved_at': self.resolved_at.strftime('%Y-%m-%d %H:%M:%S') if self.resolved_at else None,
+            'browser_info': self.browser_info,
+            'error_details': self.error_details,
+            'steps_to_reproduce': self.steps_to_reproduce
+        }
+    
+    def get_status_badge(self):
+        """Get HTML badge for status."""
+        badges = {
+            'open': '<span class="badge bg-primary">Open</span>',
+            'in_progress': '<span class="badge bg-warning text-dark">In Progress</span>',
+            'resolved': '<span class="badge bg-success">Resolved</span>',
+            'closed': '<span class="badge bg-secondary">Closed</span>'
+        }
+        return badges.get(self.status, f'<span class="badge bg-light text-dark">{self.status}</span>')
+    
+    def get_priority_badge(self):
+        """Get HTML badge for priority."""
+        badges = {
+            'low': '<span class="badge bg-light text-dark">Low</span>',
+            'medium': '<span class="badge bg-info">Medium</span>',
+            'high': '<span class="badge bg-warning text-dark">High</span>',
+            'critical': '<span class="badge bg-danger">Critical</span>'
+        }
+        return badges.get(self.priority, f'<span class="badge bg-light text-dark">{self.priority}</span>')
+    
+    def get_type_badge(self):
+        """Get HTML badge for report type."""
+        badges = {
+            'bug': '<span class="badge bg-danger"><i class="fas fa-bug me-1"></i>Bug</span>',
+            'feature_request': '<span class="badge bg-success"><i class="fas fa-lightbulb me-1"></i>Feature</span>',
+            'improvement': '<span class="badge bg-primary"><i class="fas fa-arrow-up me-1"></i>Improvement</span>',
+            'other': '<span class="badge bg-secondary"><i class="fas fa-comment me-1"></i>Other</span>'
+        }
+        return badges.get(self.report_type, f'<span class="badge bg-light text-dark">{self.report_type}</span>')
+    
+    def __repr__(self):
+        return f'<FeedbackReport {self.report_type}: {self.title} by {self.user.username}>'

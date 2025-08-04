@@ -4,7 +4,7 @@ Forms for user authentication and profile management.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, TextAreaField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
 from models import User
 
@@ -64,3 +64,47 @@ class ProfileForm(FlaskForm):
     ])
     set_as_default = BooleanField('Set as Default Profile')
     submit = SubmitField('Save Profile')
+
+
+class FeedbackForm(FlaskForm):
+    """Feedback and bug report form."""
+    
+    report_type = SelectField('Report Type', choices=[
+        ('bug', '🐛 Bug Report'),
+        ('feature_request', '💡 Feature Request'),
+        ('improvement', '⬆️ Improvement Suggestion'),
+        ('other', '💬 Other Feedback')
+    ], validators=[DataRequired()])
+    
+    title = StringField('Title', validators=[
+        DataRequired(),
+        Length(min=5, max=200, message="Title must be between 5 and 200 characters")
+    ])
+    
+    description = TextAreaField('Description', validators=[
+        DataRequired(),
+        Length(min=10, max=2000, message="Description must be between 10 and 2000 characters")
+    ], render_kw={
+        "placeholder": "Please describe the issue, feature request, or feedback in detail...",
+        "rows": 6
+    })
+    
+    priority = SelectField('Priority', choices=[
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical (app is broken)')
+    ], default='medium', validators=[DataRequired()])
+    
+    # Technical details (optional)
+    steps_to_reproduce = TextAreaField('Steps to Reproduce (for bugs)', render_kw={
+        "placeholder": "1. Go to...\n2. Click on...\n3. See error...",
+        "rows": 4
+    })
+    
+    error_details = TextAreaField('Error Details', render_kw={
+        "placeholder": "Any error messages, console errors, or technical details...",
+        "rows": 3
+    })
+    
+    submit = SubmitField('Submit Feedback')
