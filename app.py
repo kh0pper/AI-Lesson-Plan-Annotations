@@ -1,7 +1,7 @@
 import os
 import uuid
 import stripe
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -646,19 +646,106 @@ def stripe_webhook():
 
 
 # Admin interface and API endpoints
+def is_admin_user():
+    """Check if current user has admin privileges."""
+    if not current_user.is_authenticated:
+        return False
+    
+    # Check if user is in admin list (environment variable)
+    admin_emails = os.getenv('ADMIN_EMAILS', '').split(',')
+    admin_emails = [email.strip().lower() for email in admin_emails if email.strip()]
+    
+    return current_user.email.lower() in admin_emails
+
+def verify_admin_access():
+    """Verify admin access with multiple security layers."""
+    # Layer 1: Must be logged in
+    if not current_user.is_authenticated:
+        flash('Admin access requires login.')
+        return redirect(url_for('login'))
+    
+    # Layer 2: Must be in admin user list
+    if not is_admin_user():
+        flash('Access denied. Admin privileges required.')
+        return redirect(url_for('index'))
+    
+    # Layer 3: Admin password check (if set)
+    admin_password = os.getenv('ADMIN_PASSWORD')
+    if admin_password and session.get('admin_verified') != True:
+        return redirect(url_for('admin_login'))
+    
+    return None  # Access granted
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+@login_required
+def admin_login():
+    """Admin password verification page."""
+    if not is_admin_user():
+        flash('Access denied.')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        admin_password = os.getenv('ADMIN_PASSWORD')
+        entered_password = request.form.get('admin_password')
+        
+        if admin_password and entered_password == admin_password:
+            session['admin_verified'] = True
+            flash('Admin access granted.')
+            return redirect(url_for('admin_interface'))
+        else:
+            flash('Invalid admin password.')
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+@login_required
+def admin_logout():
+    """Log out from admin session."""
+    if 'admin_verified' in session:
+        session.pop('admin_verified')
+    flash('Logged out from admin panel.')
+    return redirect(url_for('index'))
+
 @app.route('/admin')
+@login_required
 def admin_interface():
     """Admin web interface for managing users."""
+    # Verify admin access
+    access_denied = verify_admin_access()
+    if access_denied:
+        return access_denied
+    
     return render_template('admin.html')
+
+def verify_admin_api_access():
+    """Verify admin API access with multiple security layers."""
+    # Layer 1: Check Admin-Key header
+    admin_key = request.headers.get('Admin-Key')
+    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
+        return False
+    
+    # Layer 2: Must be logged in and admin (for web requests)
+    if request.headers.get('Content-Type') == 'application/json' and current_user.is_authenticated:
+        return is_admin_user()
+    
+    # Layer 3: For direct API calls (without session), check IP whitelist if configured
+    admin_ips = os.getenv('ADMIN_IP_WHITELIST', '').split(',')
+    admin_ips = [ip.strip() for ip in admin_ips if ip.strip()]
+    
+    if admin_ips:
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+        if client_ip not in admin_ips:
+            return False
+    
+    return True
 
 @app.route('/admin/grant-access', methods=['POST'])
 def admin_grant_access():
     """Admin API endpoint to grant premium access."""
     
-    # Simple security - enhance this for production
-    admin_key = request.headers.get('Admin-Key')
-    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
-        return jsonify({'error': 'Unauthorized'}), 401
+    # Enhanced security check
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
     
     data = request.get_json()
     email = data.get('email')
@@ -682,7 +769,10 @@ def admin_grant_access():
     
     db.session.commit()
     
-    print(f"✅ Admin API: Granted {access_type} access to {user.username} ({email})")
+    # Security logging
+    admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+    print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) granted {access_type} access to {user.username} ({email})")
     
     return jsonify({
         'success': True,
@@ -697,9 +787,8 @@ def admin_grant_access():
 def admin_list_users():
     """Admin API endpoint to list users."""
     
-    admin_key = request.headers.get('Admin-Key')
-    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
-        return jsonify({'error': 'Unauthorized'}), 401
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
     
     users = User.query.all()
     user_list = []
@@ -723,9 +812,8 @@ def admin_list_users():
 def admin_revoke_access():
     """Admin API endpoint to revoke premium access."""
     
-    admin_key = request.headers.get('Admin-Key')
-    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
-        return jsonify({'error': 'Unauthorized'}), 401
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
     
     data = request.get_json()
     email = data.get('email')
@@ -745,7 +833,10 @@ def admin_revoke_access():
     
     db.session.commit()
     
-    print(f"✅ Admin API: Revoked access for {user.username} ({email})")
+    # Security logging
+    admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+    print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) revoked access for {user.username} ({email})")
     
     return jsonify({
         'success': True,
