@@ -16,11 +16,17 @@ pip install -r requirements.txt
 # Initialize database (run once after fresh clone)
 python3 init_db.py
 
-# Start the Flask application
+# Start the Flask application (will run on port 5001 by default)
 python3 app.py
 
-# Test template rendering (useful after making template changes)
-python3 test_template_render.py
+# Alternative: Start Flask with specific settings
+python3 -m flask --app app run --host=0.0.0.0 --port=8080 --debug
+
+# Test specific components
+python3 test_auth_system.py          # Test user authentication
+python3 test_template_render.py      # Test template rendering
+python3 test_profiles.py             # Test profile management
+python3 test_registration.py         # Test user registration
 
 # Command line annotation (bypasses web interface)
 python3 lesson_annotator.py
@@ -28,7 +34,7 @@ python3 lesson_annotator.py
 
 ### Database Management
 ```bash
-# Initialize fresh database
+# Initialize fresh database (creates ai_annotator.db)
 python3 init_db.py
 
 # No migrations system - database schema changes require manual init_db.py run
@@ -82,12 +88,19 @@ python3 init_db.py
 
 ## Important Implementation Details
 
+### Authentication-Based Access Control
+- **Anonymous users**: See landing page with registration/login options and feature overview
+- **Authenticated users**: Access full upload interface and annotation functionality
+- Landing page (`templates/landing.html`) showcases features and pricing tiers
+- Upload endpoint protected with `@login_required` decorator
+
 ### User Flow
-1. User registers/logs in via Flask-Login
-2. Uploads PDF (max 16MB, validated)
-3. Selects annotation preset or creates custom parameters
-4. System processes via AI client and generates multiple PDF formats
-5. User downloads annotated PDFs and can save profiles for reuse
+1. Anonymous users see landing page → register/login required
+2. Authenticated users access upload interface directly
+3. User uploads PDF (max 16MB, validated)
+4. Selects annotation preset or creates custom parameters
+5. System processes via AI client and generates multiple PDF formats
+6. User downloads annotated PDFs and can save profiles for reuse
 
 ### Rate Limiting
 - Free users: 5 annotations per hour via `flask-limiter`
@@ -112,8 +125,18 @@ python3 init_db.py
 
 ## Critical Notes
 
-- Database uses SQLite with no migration system - schema changes require `init_db.py`
-- Stripe webhooks must be configured for production subscription handling
-- All PDF processing is synchronous - consider async for large files
-- User profiles store JSON data for annotation parameters
-- Rate limiting uses in-memory storage - not suitable for multi-instance deployment
+- **Port Configuration**: App runs on port 5001 by default (changed from 5000 to avoid conflicts)
+- **Database**: Uses SQLite with no migration system - schema changes require `init_db.py`
+- **Authentication Required**: Anonymous users cannot access upload functionality
+- **Stripe Webhooks**: Must be configured for production subscription handling
+- **Processing**: All PDF processing is synchronous - consider async for large files
+- **Profile Storage**: User profiles store JSON data for annotation parameters
+- **Rate Limiting**: Uses in-memory storage - not suitable for multi-instance deployment
+- **API Keys**: Real Llama/OpenAI API key required - demo mode has been removed
+
+## Development Notes
+
+- Flask app automatically creates database tables on startup via `db.create_all()`
+- Test files available for major components (auth, profiles, templates, registration)
+- Landing page template provides comprehensive marketing/onboarding experience
+- User authentication integrated throughout with Flask-Login session management
