@@ -27,6 +27,12 @@ python3 test_auth_system.py          # Test user authentication
 python3 test_template_render.py      # Test template rendering
 python3 test_profiles.py             # Test profile management
 python3 test_registration.py         # Test user registration
+python3 test_webhook.py              # Test Stripe webhook endpoint
+python3 test_billing_portal.py       # Test Stripe billing portal
+python3 quick_portal_test.py         # Quick Stripe portal validation
+
+# Manual subscription management
+python3 update_subscription.py       # Update user subscription status
 
 # Command line annotation (bypasses web interface)
 python3 lesson_annotator.py
@@ -85,7 +91,10 @@ curl https://your-app.onrender.com/health
 
 **Subscription System** (`stripe_integration.py`):
 - Stripe webhook handling for subscription lifecycle
+- Stripe billing portal integration for subscription management
 - Two-tier system: Free (1 profile, 5/hour) vs Premium (10 profiles, unlimited)
+- Webhook endpoints handle subscription created/updated/deleted events
+- Customer portal must be configured in Stripe Dashboard for billing management
 
 ### Configuration
 
@@ -140,11 +149,28 @@ curl https://your-app.onrender.com/health
 - **Port Configuration**: App runs on port 5001 by default (changed from 5000 to avoid conflicts)
 - **Database**: Uses SQLite with no migration system - schema changes require `init_db.py`
 - **Authentication Required**: Anonymous users cannot access upload functionality
-- **Stripe Webhooks**: Must be configured for production subscription handling
+- **Stripe Configuration**: 
+  - Webhooks must be configured at `/stripe-webhook` endpoint in production
+  - Customer Portal must be configured in Stripe Dashboard before billing management works
+  - Test/Live mode API keys must match customer data (test customers need test keys, live customers need live keys)
 - **Processing**: All PDF processing is synchronous - consider async for large files
 - **Profile Storage**: User profiles store JSON data for annotation parameters
 - **Rate Limiting**: Uses in-memory storage - not suitable for multi-instance deployment
 - **API Keys**: Real Llama/OpenAI API key required - demo mode has been removed
+
+## Stripe Integration Troubleshooting
+
+### Common Issues:
+- **405 Method Not Allowed**: Check webhook endpoint accepts POST requests
+- **Billing Portal Error**: Ensure Customer Portal is configured in Stripe Dashboard
+- **Authentication Errors**: Verify API key mode (test/live) matches customer data mode
+- **Webhook Failures**: Check `STRIPE_WEBHOOK_SECRET` environment variable is set correctly
+
+### Required Stripe Setup:
+1. Configure Customer Portal in Stripe Dashboard (`Settings > Billing > Customer Portal`)
+2. Set webhook endpoint to `https://your-domain.com/stripe-webhook`
+3. Subscribe to events: `customer.subscription.*`, `invoice.payment.*`
+4. Ensure live mode keys are used for production deployment
 
 ## Development Notes
 
