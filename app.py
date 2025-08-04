@@ -645,7 +645,12 @@ def stripe_webhook():
         return jsonify({'error': 'Webhook error'}), 500
 
 
-# Admin API endpoints for user management
+# Admin interface and API endpoints
+@app.route('/admin')
+def admin_interface():
+    """Admin web interface for managing users."""
+    return render_template('admin.html')
+
 @app.route('/admin/grant-access', methods=['POST'])
 def admin_grant_access():
     """Admin API endpoint to grant premium access."""
