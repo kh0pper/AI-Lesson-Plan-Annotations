@@ -674,6 +674,10 @@ def verify_admin_access():
     if admin_password and session.get('admin_verified') != True:
         return redirect(url_for('admin_login'))
     
+    # If no admin password is set, mark as verified for API access
+    if not admin_password:
+        session['admin_verified'] = True
+    
     return None  # Access granted
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -719,16 +723,17 @@ def admin_interface():
 
 def verify_admin_api_access():
     """Verify admin API access with multiple security layers."""
-    # Layer 1: Check Admin-Key header
+    
+    # Check if this is a web-based admin request (user logged in with admin session)
+    if current_user.is_authenticated and is_admin_user() and session.get('admin_verified') == True:
+        return True
+    
+    # For API calls: Check Admin-Key header
     admin_key = request.headers.get('Admin-Key')
     if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
         return False
     
-    # Layer 2: Must be logged in and admin (for web requests)
-    if request.headers.get('Content-Type') == 'application/json' and current_user.is_authenticated:
-        return is_admin_user()
-    
-    # Layer 3: For direct API calls (without session), check IP whitelist if configured
+    # For direct API calls (without session), check IP whitelist if configured
     admin_ips = os.getenv('ADMIN_IP_WHITELIST', '').split(',')
     admin_ips = [ip.strip() for ip in admin_ips if ip.strip()]
     
