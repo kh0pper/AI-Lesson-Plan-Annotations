@@ -7,7 +7,6 @@ $5/month donations unlock premium features.
 import os
 import stripe
 from datetime import datetime, timedelta
-from flask import current_app, url_for
 from models import db, User
 
 # Initialize Stripe with keys from environment variables
@@ -39,7 +38,7 @@ class StripeService:
             return customer
             
         except stripe.error.StripeError as e:
-            current_app.logger.error(f"Stripe customer creation failed: {e}")
+            print(f"Stripe customer creation failed: {e}")
             return None
     
     @staticmethod
@@ -71,7 +70,7 @@ class StripeService:
             return checkout_session
             
         except stripe.error.StripeError as e:
-            current_app.logger.error(f"Stripe checkout session creation failed: {e}")
+            print(f"Stripe checkout session creation failed: {e}")
             return None
     
     @staticmethod
@@ -89,7 +88,7 @@ class StripeService:
             return portal_session
             
         except stripe.error.StripeError as e:
-            current_app.logger.error(f"Stripe billing portal creation failed: {e}")
+            print(f"Stripe billing portal creation failed: {e}")
             return None
     
     @staticmethod
