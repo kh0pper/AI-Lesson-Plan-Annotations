@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Alpha Tester Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4 mb-4">🧪 Alpha Tester Admin Panel</h1>
+            
+            <!-- Grant Access Form -->
+            <div class="card mb-5">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Grant Alpha Access
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="grantAccessForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">User Email</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                    <div class="form-text">The email address the user registered with</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="days" class="form-label">Duration (Days)</label>
+                                    <input type="number" class="form-control" id="days" value="365">
+                                    <div class="form-text">0 = Lifetime access</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="accessType" class="form-label">Access Type</label>
+                                    <select class="form-control" id="accessType">
+                                        <option value="alpha">Alpha Tester</option>
+                                        <option value="beta">Beta Tester</option>
+                                        <option value="premium">Premium Access</option>
+                                        <option value="lifetime">Lifetime Access</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-magic me-2"></i>Grant Access
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User List -->
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>All Users
+                    </h3>
+                    <button class="btn btn-light btn-sm" onclick="loadUsers()">
+                        <i class="fas fa-refresh me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="usersList">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading users...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalTitle">Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alertModalBody">
+                <!-- Content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const ADMIN_KEY = 'ai-lesson-alpha-admin-2024'; // In production, get this from environment
+
+// Grant access form handler
+document.getElementById('grantAccessForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const days = parseInt(document.getElementById('days').value);
+    const accessType = document.getElementById('accessType').value;
+    
+    try {
+        const response = await fetch('/admin/grant-access', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                email: email,
+                days: days,
+                access_type: accessType
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', 
+                `Granted ${accessType} access to ${result.user} (${result.email})<br>
+                Profile limit: ${result.profile_limit}<br>
+                Expires: ${result.expires || 'Never'}`, 
+                'success');
+            document.getElementById('grantAccessForm').reset();
+            document.getElementById('days').value = '365';
+            loadUsers(); // Refresh user list
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to grant access: ' + error.message, 'danger');
+    }
+});
+
+// Load users list
+async function loadUsers() {
+    try {
+        const response = await fetch('/admin/list-users', {
+            headers: {
+                'Admin-Key': ADMIN_KEY
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.users) {
+            displayUsers(result.users);
+        } else {
+            document.getElementById('usersList').innerHTML = 
+                '<div class="alert alert-danger">Failed to load users: ' + (result.error || 'Unknown error') + '</div>';
+        }
+    } catch (error) {
+        document.getElementById('usersList').innerHTML = 
+            '<div class="alert alert-danger">Network error: ' + error.message + '</div>';
+    }
+}
+
+// Display users in a table
+function displayUsers(users) {
+    const usersList = document.getElementById('usersList');
+    
+    if (users.length === 0) {
+        usersList.innerHTML = '<div class="alert alert-info">No users found.</div>';
+        return;
+    }
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Access Type</th>
+                        <th>Expires</th>
+                        <th>Profiles</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    users.forEach(user => {
+        const accessBadge = getAccessBadge(user.access_type);
+        const profilesText = `${user.profile_count}/${user.profile_limit}`;
+        const joinedDate = new Date(user.created_at).toLocaleDateString();
+        
+        html += `
+            <tr>
+                <td>
+                    <strong>${user.username}</strong>
+                    ${user.is_alpha_tester ? '<i class="fas fa-flask text-success ms-1" title="Alpha Tester"></i>' : ''}
+                </td>
+                <td>${user.email}</td>
+                <td>${accessBadge}</td>
+                <td>${user.expires}</td>
+                <td>${profilesText}</td>
+                <td>${joinedDate}</td>
+                <td>
+                    ${user.subscription_status !== 'free' ? 
+                        `<button class="btn btn-sm btn-outline-danger" onclick="revokeAccess('${user.email}')">
+                            <i class="fas fa-times"></i> Revoke
+                        </button>` : 
+                        `<button class="btn btn-sm btn-outline-success" onclick="grantQuickAccess('${user.email}')">
+                            <i class="fas fa-plus"></i> Grant
+                        </button>`
+                    }
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    usersList.innerHTML = html;
+}
+
+function getAccessBadge(accessType) {
+    const badges = {
+        'Free': '<span class="badge bg-secondary">Free</span>',
+        'Alpha Tester': '<span class="badge bg-success">Alpha Tester</span>',
+        'Beta Tester': '<span class="badge bg-info">Beta Tester</span>',
+        'Premium Subscriber': '<span class="badge bg-warning text-dark">Premium</span>',
+        'Premium Access': '<span class="badge bg-primary">Premium</span>',
+        'Premium': '<span class="badge bg-primary">Premium</span>'
+    };
+    return badges[accessType] || `<span class="badge bg-light text-dark">${accessType}</span>`;
+}
+
+async function revokeAccess(email) {
+    if (!confirm(`Revoke access for ${email}?`)) return;
+    
+    try {
+        const response = await fetch('/admin/revoke-access', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', `Access revoked for ${result.user}`, 'success');
+            loadUsers();
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to revoke access: ' + error.message, 'danger');
+    }
+}
+
+function grantQuickAccess(email) {
+    document.getElementById('email').value = email;
+    document.getElementById('email').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showAlert(title, message, type) {
+    document.getElementById('alertModalTitle').textContent = title;
+    document.getElementById('alertModalBody').innerHTML = message;
+    new bootstrap.Modal(document.getElementById('alertModal')).show();
+}
+
+// Load users on page load
+document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+</style>
+{% endblock %}

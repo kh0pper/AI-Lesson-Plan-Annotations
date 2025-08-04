@@ -645,6 +645,111 @@ def stripe_webhook():
         return jsonify({'error': 'Webhook error'}), 500
 
 
+# Admin API endpoints for user management
+@app.route('/admin/grant-access', methods=['POST'])
+def admin_grant_access():
+    """Admin API endpoint to grant premium access."""
+    
+    # Simple security - enhance this for production
+    admin_key = request.headers.get('Admin-Key')
+    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    email = data.get('email')
+    days = data.get('days', 365)
+    access_type = data.get('access_type', 'alpha')
+    
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+    
+    # Find user
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # Grant access
+    user.subscription_status = 'active'
+    user.subscription_start = datetime.utcnow()
+    user.subscription_end = datetime.utcnow() + timedelta(days=days) if days > 0 else None
+    user.subscription_id = f"{access_type}_access_{datetime.now().strftime('%Y%m%d')}"
+    user.last_payment = datetime.utcnow()
+    
+    db.session.commit()
+    
+    print(f"✅ Admin API: Granted {access_type} access to {user.username} ({email})")
+    
+    return jsonify({
+        'success': True,
+        'user': user.username,
+        'email': user.email,
+        'access_type': access_type,
+        'expires': user.subscription_end.isoformat() if user.subscription_end else None,
+        'profile_limit': user.get_profile_limit()
+    })
+
+@app.route('/admin/list-users', methods=['GET'])
+def admin_list_users():
+    """Admin API endpoint to list users."""
+    
+    admin_key = request.headers.get('Admin-Key')
+    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    users = User.query.all()
+    user_list = []
+    
+    for user in users:
+        user_list.append({
+            'username': user.username,
+            'email': user.email,
+            'subscription_status': user.subscription_status,
+            'access_type': user.get_access_type(),
+            'expires': user.get_access_expires(),
+            'profile_count': len(user.annotation_profiles),
+            'profile_limit': user.get_profile_limit(),
+            'created_at': user.created_at.isoformat(),
+            'is_alpha_tester': user.is_alpha_tester()
+        })
+    
+    return jsonify({'users': user_list})
+
+@app.route('/admin/revoke-access', methods=['POST'])
+def admin_revoke_access():
+    """Admin API endpoint to revoke premium access."""
+    
+    admin_key = request.headers.get('Admin-Key')
+    if admin_key != os.getenv('ADMIN_API_KEY', 'ai-lesson-alpha-admin-2024'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    user.subscription_status = 'free'
+    user.subscription_id = None
+    user.subscription_start = None
+    user.subscription_end = None
+    user.last_payment = None
+    
+    db.session.commit()
+    
+    print(f"✅ Admin API: Revoked access for {user.username} ({email})")
+    
+    return jsonify({
+        'success': True,
+        'user': user.username,
+        'email': user.email,
+        'new_status': 'free'
+    })
+
+
 if __name__ == '__main__':
     # Create database tables if they don't exist
     with app.app_context():

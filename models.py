@@ -73,6 +73,32 @@ class User(UserMixin, db.Model):
         current_count = len(self.annotation_profiles)
         return current_count < self.get_profile_limit()
     
+    def is_alpha_tester(self):
+        """Check if user is an alpha tester."""
+        return (self.subscription_id and 
+                ('alpha_access' in self.subscription_id or 'beta_access' in self.subscription_id))
+    
+    def get_access_type(self):
+        """Get the user's access type for display."""
+        if not self.is_premium():
+            return "Free"
+        elif self.subscription_id:
+            if 'alpha_access' in self.subscription_id:
+                return "Alpha Tester"
+            elif 'beta_access' in self.subscription_id:
+                return "Beta Tester"
+            elif self.subscription_id.startswith('sub_'):
+                return "Premium Subscriber"
+            else:
+                return "Premium Access"
+        return "Premium"
+    
+    def get_access_expires(self):
+        """Get when access expires, formatted for display."""
+        if not self.subscription_end:
+            return "Never"
+        return self.subscription_end.strftime('%B %d, %Y')
+    
     def __repr__(self):
         return f'<User {self.username}>'
 

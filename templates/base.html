@@ -37,7 +37,9 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user me-1"></i>{{ current_user.username }}
-                            {% if current_user.is_premium() %}
+                            {% if current_user.is_alpha_tester() %}
+                            <span class="badge bg-success text-white ms-1">{{ current_user.get_access_type() }}</span>
+                            {% elif current_user.is_premium() %}
                             <span class="badge bg-warning text-dark ms-1">Premium</span>
                             {% endif %}
                         </a>
