@@ -40,6 +40,18 @@ python3 init_db.py
 # No migrations system - database schema changes require manual init_db.py run
 ```
 
+### Deployment
+```bash
+# Deploy to Render (see DEPLOYMENT.md for full guide)
+# 1. Push code to GitHub
+# 2. Connect GitHub repo to Render
+# 3. Set environment variables in Render dashboard
+# 4. Deploy automatically
+
+# Health check endpoint
+curl https://your-app.onrender.com/health
+```
+
 ## Architecture Overview
 
 ### Core Components

@@ -14,7 +14,7 @@ from forms import RegistrationForm, LoginForm, ProfileForm
 from stripe_integration import StripeService, get_stripe_public_key
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this-in-production'
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key-change-this-in-production')
 
 # Database configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -69,6 +69,11 @@ def index():
         session['default_profile_data'] = default_profile.to_dict()
     
     return render_template('index.html', presets=presets, user_profiles=user_profiles)
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for deployment platforms."""
+    return jsonify({'status': 'healthy', 'service': 'AI Lesson Plan Annotator'}), 200
 
 @app.route('/app')
 @login_required
@@ -601,4 +606,8 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Use PORT environment variable for deployment (Render, Heroku, etc.)
+    port = int(os.environ.get('PORT', 5001))
+    debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
