@@ -83,11 +83,107 @@
                 </div>
             </div>
             
-            <!-- Grant Access Form - moved below user list -->
+            <!-- User Management Tools -->
+            <div class="row mb-5">
+                <!-- Create User Card -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-user-plus me-2"></i>Create New User
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="createUserForm">
+                                <div class="mb-3">
+                                    <label for="newUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="newUsername" required>
+                                    <div class="form-text">Must be at least 3 characters</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="newEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="newPassword" required>
+                                    <div class="form-text">Must be at least 6 characters</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="newAccessType" class="form-label">Access Type</label>
+                                            <select class="form-control" id="newAccessType">
+                                                <option value="">Free User</option>
+                                                <option value="Alpha Tester">Alpha Tester</option>
+                                                <option value="Beta Tester">Beta Tester</option>
+                                                <option value="Premium Access">Premium Access</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="newDays" class="form-label">Days</label>
+                                            <input type="number" class="form-control" id="newDays" value="365">
+                                            <div class="form-text">0 = No expiry</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Create User
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Password Management Card -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-warning text-dark">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-key me-2"></i>Password Management
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="updatePasswordForm">
+                                <div class="mb-3">
+                                    <label for="passwordEmail" class="form-label">User Email</label>
+                                    <input type="email" class="form-control" id="passwordEmail" required>
+                                    <div class="form-text">Enter the user's email address</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPasswordUpdate" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPasswordUpdate" required>
+                                    <div class="form-text">Must be at least 6 characters</div>
+                                </div>
+                                <button type="submit" class="btn btn-warning text-dark">
+                                    <i class="fas fa-key me-2"></i>Update Password
+                                </button>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <form id="deleteUserForm">
+                                <div class="mb-3">
+                                    <label for="deleteEmail" class="form-label">Delete User Account</label>
+                                    <input type="email" class="form-control" id="deleteEmail" required>
+                                    <div class="form-text text-danger">⚠️ This action cannot be undone</div>
+                                </div>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>Delete User
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grant Access Form - moved below user management tools -->
             <div class="card mb-5">
                 <div class="card-header bg-success text-white">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-user-plus me-2"></i>Grant Alpha Access
+                        <i class="fas fa-magic me-2"></i>Grant Special Access (Existing Users)
                     </h3>
                 </div>
                 <div class="card-body">
@@ -97,7 +193,7 @@
                                 <div class="mb-3">
                                     <label for="email" class="form-label">User Email</label>
                                     <input type="email" class="form-control" id="email" required>
-                                    <div class="form-text">The email address the user registered with</div>
+                                    <div class="form-text">The email address of an existing user</div>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -306,14 +402,22 @@ function displayUsers(users) {
                 <td>${profilesText}</td>
                 <td>${joinedDate}</td>
                 <td>
-                    ${user.subscription_status !== 'free' ? 
-                        `<button class="btn btn-sm btn-outline-danger" onclick="revokeAccess('${user.email}')">
-                            <i class="fas fa-times"></i> Revoke
-                        </button>` : 
-                        `<button class="btn btn-sm btn-outline-success" onclick="grantQuickAccess('${user.email}')">
-                            <i class="fas fa-plus"></i> Grant
-                        </button>`
-                    }
+                    <div class="btn-group" role="group">
+                        ${user.subscription_status !== 'free' ? 
+                            `<button class="btn btn-sm btn-outline-danger" onclick="revokeAccess('${user.email}')" title="Revoke Access">
+                                <i class="fas fa-times"></i>
+                            </button>` : 
+                            `<button class="btn btn-sm btn-outline-success" onclick="grantQuickAccess('${user.email}')" title="Grant Access">
+                                <i class="fas fa-plus"></i>
+                            </button>`
+                        }
+                        <button class="btn btn-sm btn-outline-warning" onclick="resetPasswordQuick('${user.email}')" title="Reset Password">
+                            <i class="fas fa-key"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUserQuick('${user.email}')" title="Delete User">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -364,6 +468,83 @@ async function revokeAccess(email) {
 function grantQuickAccess(email) {
     document.getElementById('email').value = email;
     document.getElementById('email').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetPasswordQuick(email) {
+    const newPassword = prompt(`Reset password for ${email}:\n\nEnter new password (minimum 6 characters):`);
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
+    }
+    
+    updatePasswordAPI(email, newPassword);
+}
+
+function deleteUserQuick(email) {
+    if (!confirm(`⚠️ WARNING: Delete user account for ${email}?\n\nThis will permanently delete:\n- User account\n- All annotation profiles\n- All feedback reports\n- All usage history\n\nThis action cannot be undone!`)) return;
+    
+    // Double confirmation
+    const confirmation = prompt(`Type "DELETE" to confirm deletion of ${email}:`);
+    if (confirmation !== 'DELETE') {
+        alert('Deletion cancelled - confirmation text did not match');
+        return;
+    }
+    
+    deleteUserAPI(email);
+}
+
+async function updatePasswordAPI(email, newPassword) {
+    try {
+        const response = await fetch('/admin/update-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                email: email,
+                new_password: newPassword
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', result.message, 'success');
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to update password: ' + error.message, 'danger');
+    }
+}
+
+async function deleteUserAPI(email) {
+    try {
+        const response = await fetch('/admin/delete-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', result.message, 'success');
+            loadUsers(); // Refresh user list
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to delete user: ' + error.message, 'danger');
+    }
 }
 
 function showAlert(title, message, type) {
@@ -615,6 +796,134 @@ document.addEventListener('DOMContentLoaded', loadUsers);
 document.getElementById('feedback-tab').addEventListener('shown.bs.tab', function() {
     if (allFeedback.length === 0) {
         loadFeedback();
+    }
+});
+
+// Create user form handler
+document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('newUsername').value.trim();
+    const email = document.getElementById('newEmail').value.trim();
+    const password = document.getElementById('newPassword').value;
+    const accessType = document.getElementById('newAccessType').value;
+    const days = parseInt(document.getElementById('newDays').value) || 0;
+    
+    if (!username || !email || !password) {
+        showAlert('❌ Error', 'All fields are required', 'danger');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/create-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                username: username,
+                email: email,
+                password: password,
+                access_type: accessType,
+                days: days
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', result.message, 'success');
+            document.getElementById('createUserForm').reset();
+            document.getElementById('newDays').value = '365';
+            loadUsers(); // Refresh user list
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to create user: ' + error.message, 'danger');
+    }
+});
+
+// Update password form handler
+document.getElementById('updatePasswordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('passwordEmail').value.trim();
+    const newPassword = document.getElementById('newPasswordUpdate').value;
+    
+    if (!email || !newPassword) {
+        showAlert('❌ Error', 'Both email and new password are required', 'danger');
+        return;
+    }
+    
+    if (!confirm(`Update password for ${email}?`)) return;
+    
+    try {
+        const response = await fetch('/admin/update-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                email: email,
+                new_password: newPassword
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', result.message, 'success');
+            document.getElementById('updatePasswordForm').reset();
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to update password: ' + error.message, 'danger');
+    }
+});
+
+// Delete user form handler
+document.getElementById('deleteUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('deleteEmail').value.trim();
+    
+    if (!email) {
+        showAlert('❌ Error', 'Email is required', 'danger');
+        return;
+    }
+    
+    if (!confirm(`⚠️ WARNING: This will permanently delete the user account for ${email} and all associated data (profiles, feedback, etc.).\n\nThis action cannot be undone. Are you sure?`)) return;
+    
+    // Double confirmation for safety
+    if (!confirm('Are you absolutely sure? Type "DELETE" to confirm this is intentional.')) return;
+    
+    try {
+        const response = await fetch('/admin/delete-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', result.message, 'success');
+            document.getElementById('deleteUserForm').reset();
+            loadUsers(); // Refresh user list
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to delete user: ' + error.message, 'danger');
     }
 });
 </script>

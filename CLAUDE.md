@@ -93,9 +93,31 @@ curl https://your-app.onrender.com/health
    - `combined_pdf_annotator.py` - Comprehensive multi-format output
 
 **Database Models** (`models.py`):
-- `User` - Authentication, subscription status, usage tracking, alpha tester detection
-- `AnnotationProfile` - Custom user annotation preferences (JSON storage)
-- `UsageRecord` - Rate limiting and usage analytics
+
+*User Model:*
+- Authentication: username, email, password_hash with bcrypt
+- Subscription: subscription_status, stripe_customer_id, access_type, expires_at
+- Limits: profile_limit (1 for free, 10 for premium/alpha)
+- Methods: is_premium(), is_alpha_tester(), get_access_type(), check_password()
+
+*AnnotationProfile Model:*
+- Custom user annotation preferences with JSON storage
+- Fields: name, description, is_default, pedagogical_approach, engagement_level
+- Advanced options: assessment_type, differentiation, language_focus, age_group
+- Visual: annotation_theme, custom_category_definitions
+- Relationships: ForeignKey to User with cascade delete
+
+*FeedbackReport Model:*
+- Comprehensive feedback tracking system
+- Core: report_type (bug/feature_request/improvement/other), title, description
+- Management: priority (low/medium/high/critical), status (open/in_progress/resolved/closed)
+- Technical: browser_info, error_details, steps_to_reproduce
+- Admin: admin_notes, resolved_at timestamps
+- Methods: get_type_badge(), get_priority_badge(), get_status_badge() for UI
+- Relationships: ForeignKey to User with cascade delete
+
+*UsageRecord Model:*
+- Rate limiting and usage analytics tracking
 - Automatic PostgreSQL detection via `DATABASE_URL` environment variable
 - SQLite fallback for local development
 
@@ -108,10 +130,22 @@ curl https://your-app.onrender.com/health
 
 **Admin Panel** (`templates/admin.html`, admin routes in `app.py`):
 - Secure multi-layer authentication (user login + admin whitelist + optional password)
+- Tabbed interface: User Management + Feedback Management
 - User management interface with search/filtering capabilities
 - Alpha tester management system with API endpoints
+- Feedback and bug report management with status tracking
 - Admin action logging with IP tracking
 - Web interface accessible at `/admin` for authorized users only
+
+**Feedback System** (`forms.py`, feedback routes in `app.py`):
+- User feedback submission with categorization (bugs, features, improvements, other)
+- Dynamic form sections based on report type (technical details for bugs)
+- Priority levels (low, medium, high, critical) and status tracking
+- Admin management interface integrated in admin panel with tabbed UI
+- User feedback history at `/my-feedback` with visual status indicators
+- Real-time filtering and search capabilities in admin interface
+- Browser information capture for debugging purposes
+- Comprehensive admin notes system for feedback resolution tracking
 
 ### Configuration
 
@@ -229,3 +263,72 @@ curl https://your-app.onrender.com/health
 - Must set `ADMIN_EMAILS` environment variable
 - Must be logged in as whitelisted admin user
 - Optional: `ADMIN_PASSWORD` for additional security layer
+
+## Template Structure
+
+**Base Template** (`templates/base.html`):
+- Bootstrap 5 responsive design with Font Awesome icons
+- Navigation includes authenticated user menu with access badges
+- Feedback link in main navigation for logged-in users
+- User dropdown with "My Feedback" access and billing management
+- Copyright updated to 2025
+
+**Main Pages**:
+- `templates/index.html` - Primary upload interface with comprehensive form options
+- `templates/landing.html` - Marketing page for anonymous users
+- `templates/feedback.html` - Feedback submission form with dynamic sections
+- `templates/my_feedback.html` - User feedback history with status cards
+- `templates/admin.html` - Tabbed admin interface (User Management + Feedback)
+
+**Key UI Features**:
+- Responsive card-based design with hover effects
+- Dynamic form sections that show/hide based on selections
+- Visual status badges for feedback reports and user access levels
+- Bootstrap modal dialogs for admin actions
+- Real-time search and filtering without page refresh
+- Professional styling with consistent color schemes
+
+## API Endpoints
+
+**Public Routes**:
+- `GET /` - Landing page for anonymous users, upload interface for authenticated
+- `POST /upload` - PDF upload and annotation processing (login required)
+- `GET /feedback` - Feedback submission form (login required)
+- `POST /feedback` - Process feedback submission (login required)
+- `GET /my-feedback` - User's feedback history (login required)
+
+**Authentication Routes**:
+- `GET/POST /login` - User authentication
+- `GET/POST /register` - User registration
+- `GET /logout` - User logout
+
+**Subscription Routes**:
+- `GET /donate` - Stripe subscription page
+- `POST /create-checkout-session` - Stripe checkout session creation
+- `POST /stripe-webhook` - Stripe webhook endpoint for subscription events
+- `GET /billing-portal` - Stripe billing portal redirect (premium users)
+
+**Admin API Endpoints** (requires admin authentication):
+- `GET /admin` - Admin panel web interface
+- `GET /admin/list-users` - List all users with filtering
+- `POST /admin/grant-access` - Grant alpha/premium access to users
+- `POST /admin/revoke-access` - Revoke special access from users
+- `GET /admin/feedback` - List all feedback reports with filtering
+- `POST /admin/feedback/<id>` - Update feedback status and admin notes
+- `POST /admin/logout` - Admin logout
+
+## Recent Updates Summary
+
+The application has been significantly enhanced with:
+
+1. **Comprehensive Feedback System**: Users can now submit bug reports, feature requests, and improvement suggestions through a dedicated form with dynamic fields, priority levels, and technical details capture.
+
+2. **Enhanced Admin Panel**: Multi-tabbed interface combining user management and feedback management with real-time filtering, search capabilities, and comprehensive admin tools.
+
+3. **Improved User Experience**: Updated navigation with feedback links, visual status indicators, and responsive design improvements throughout the application.
+
+4. **Database Architecture**: Added FeedbackReport model with full relationship mapping and cascade delete functionality for data integrity.
+
+5. **API Endpoints**: New admin endpoints for feedback management with proper authentication and security measures.
+
+The codebase now represents a mature, production-ready lesson plan annotation system with comprehensive user management, feedback collection, and administrative capabilities.

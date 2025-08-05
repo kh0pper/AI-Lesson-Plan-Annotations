@@ -4,6 +4,7 @@ import stripe
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import json
 
@@ -1018,6 +1019,189 @@ def admin_update_feedback(feedback_id):
         'success': True,
         'feedback': report.to_dict()
     })
+
+
+@app.route('/admin/create-user', methods=['POST'])
+def admin_create_user():
+    """Admin API endpoint to create new user accounts."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    data = request.get_json()
+    
+    # Validate required fields
+    required_fields = ['username', 'email', 'password']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    username = data['username'].strip()
+    email = data['email'].strip().lower()
+    password = data['password']
+    
+    # Basic validation
+    if len(username) < 3:
+        return jsonify({'error': 'Username must be at least 3 characters long'}), 400
+    
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+    
+    if '@' not in email or '.' not in email:
+        return jsonify({'error': 'Invalid email format'}), 400
+    
+    # Check if user already exists
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already registered'}), 400
+    
+    try:
+        # Create new user
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=generate_password_hash(password)
+        )
+        
+        # Set optional fields
+        if data.get('access_type'):
+            new_user.access_type = data['access_type']
+            if data['access_type'] in ['Alpha Tester', 'Beta Tester', 'Premium Access']:
+                new_user.profile_limit = 10
+                new_user.subscription_status = 'active'
+                if data.get('days'):
+                    days = int(data['days'])
+                    if days > 0:
+                        new_user.expires_at = datetime.utcnow() + timedelta(days=days)
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Log the admin action
+        admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+        print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) created user: {username} ({email})")
+        
+        return jsonify({
+            'success': True,
+            'message': f'User {username} created successfully',
+            'user': {
+                'id': new_user.id,
+                'username': new_user.username,
+                'email': new_user.email,
+                'access_type': new_user.get_access_type(),
+                'created_at': new_user.created_at.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error creating user: {e}")
+        return jsonify({'error': 'Failed to create user'}), 500
+
+
+@app.route('/admin/update-password', methods=['POST'])
+def admin_update_password():
+    """Admin API endpoint to update user passwords."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    data = request.get_json()
+    
+    if not data.get('user_id') and not data.get('email'):
+        return jsonify({'error': 'Either user_id or email is required'}), 400
+    
+    if not data.get('new_password'):
+        return jsonify({'error': 'New password is required'}), 400
+    
+    new_password = data['new_password']
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+    
+    try:
+        # Find user
+        if data.get('user_id'):
+            user = User.query.get(data['user_id'])
+        else:
+            user = User.query.filter_by(email=data['email'].strip().lower()).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update password
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        
+        # Log the admin action
+        admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+        print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) updated password for user: {user.username} ({user.email})")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Password updated for user {user.username}',
+            'user': user.username
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error updating password: {e}")
+        return jsonify({'error': 'Failed to update password'}), 500
+
+
+@app.route('/admin/delete-user', methods=['POST'])
+def admin_delete_user():
+    """Admin API endpoint to delete user accounts."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    data = request.get_json()
+    
+    if not data.get('user_id') and not data.get('email'):
+        return jsonify({'error': 'Either user_id or email is required'}), 400
+    
+    try:
+        # Find user
+        if data.get('user_id'):
+            user = User.query.get(data['user_id'])
+        else:
+            user = User.query.filter_by(email=data['email'].strip().lower()).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Prevent deletion of admin users (optional safety measure)
+        admin_emails = os.environ.get('ADMIN_EMAILS', '').split(',')
+        if user.email in [email.strip() for email in admin_emails]:
+            return jsonify({'error': 'Cannot delete admin users'}), 403
+        
+        # Store user info for logging before deletion
+        user_info = f"{user.username} ({user.email})"
+        user_id = user.id
+        
+        # Delete user (cascade will handle related records)
+        db.session.delete(user)
+        db.session.commit()
+        
+        # Log the admin action
+        admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+        print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) deleted user: {user_info}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'User {user_info} deleted successfully',
+            'deleted_user_id': user_id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error deleting user: {e}")
+        return jsonify({'error': 'Failed to delete user'}), 500
 
 
 def init_database():
