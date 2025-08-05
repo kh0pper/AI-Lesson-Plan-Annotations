@@ -330,33 +330,49 @@ class GiftCard(db.Model):
         """Redeem the gift card for a user."""
         is_valid, message = self.is_valid()
         if not is_valid:
+            print(f"❌ Gift card validation failed: {message}")
             return False, message
         
-        # Mark as redeemed
-        self.is_redeemed = True
-        self.redeemed_by_user_id = user.id
-        self.redeemed_at = datetime.utcnow()
-        self.redeemed_ip = client_ip
-        
-        # Grant premium access
-        from datetime import timedelta
-        
-        # If user already has premium access, extend it
-        if user.expires_at and user.expires_at > datetime.utcnow():
-            user.expires_at = user.expires_at + timedelta(days=30 * self.value_months)
-        else:
-            user.expires_at = datetime.utcnow() + timedelta(days=30 * self.value_months)
-        
-        # Update user access type
-        if user.access_type == 'Free':
-            user.access_type = 'Premium Access'
-        
-        user.subscription_status = 'active'
-        user.profile_limit = 10
-        
-        db.session.commit()
-        
-        return True, f"Gift card redeemed! Premium access granted until {user.expires_at.strftime('%B %d, %Y')}"
+        try:
+            print(f"🎁 Starting redemption for gift card {self.code} by user {user.username}")
+            
+            # Mark as redeemed
+            self.is_redeemed = True
+            self.redeemed_by_user_id = user.id
+            self.redeemed_at = datetime.utcnow()
+            self.redeemed_ip = client_ip
+            
+            # Grant premium access
+            from datetime import timedelta
+            
+            print(f"📊 User before redemption: access_type={user.access_type}, expires_at={user.expires_at}")
+            
+            # If user already has premium access, extend it
+            if user.expires_at and user.expires_at > datetime.utcnow():
+                user.expires_at = user.expires_at + timedelta(days=30 * self.value_months)
+            else:
+                user.expires_at = datetime.utcnow() + timedelta(days=30 * self.value_months)
+            
+            # Update user access type
+            if user.access_type == 'Free':
+                user.access_type = 'Premium Access'
+            
+            user.subscription_status = 'active'
+            user.profile_limit = 10
+            
+            print(f"📊 User after update: access_type={user.access_type}, expires_at={user.expires_at}")
+            print(f"💾 Attempting database commit...")
+            
+            db.session.commit()
+            
+            print(f"✅ Gift card {self.code} redeemed successfully!")
+            return True, f"Gift card redeemed! Premium access granted until {user.expires_at.strftime('%B %d, %Y')}"
+            
+        except Exception as e:
+            print(f"❌ Error during gift card redemption: {str(e)}")
+            print(f"❌ Exception type: {type(e).__name__}")
+            db.session.rollback()
+            return False, f"Database error during redemption: {str(e)}"
     
     def to_dict(self):
         """Convert gift card to dictionary for API responses."""
