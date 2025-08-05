@@ -30,6 +30,7 @@ python3 test_registration.py         # Test user registration
 python3 test_webhook.py              # Test Stripe webhook endpoint
 python3 test_billing_portal.py       # Test Stripe billing portal
 python3 quick_portal_test.py         # Quick Stripe portal validation
+python3 test_gift_card_api.py        # Test Teachers Pay Teachers gift card API integration
 
 # Manual subscription management
 python3 update_subscription.py       # Update user subscription status
@@ -64,6 +65,15 @@ python3 manage_render_users.py grant https://your-app.onrender.com user@email.co
 
 # Health check endpoint
 curl https://your-app.onrender.com/health
+```
+
+### Gift Card Integration
+```bash
+# Test Teachers Pay Teachers API integration
+python3 test_gift_card_api.py
+
+# See TEACHERS_PAY_TEACHERS_INTEGRATION.md for complete API documentation
+# and integration instructions for marketplace monetization
 ```
 
 ## Architecture Overview
@@ -216,6 +226,7 @@ curl https://your-app.onrender.com/health
 ## Critical Notes
 
 - **Port Configuration**: App runs on port 5001 by default (changed from 5000 to avoid conflicts)
+  - **Note**: README.md still references port 5000 - this is outdated
 - **Database Persistence**: 
   - **Production**: Requires `DATABASE_URL` (PostgreSQL) for persistent storage
   - **Development**: Falls back to SQLite (ephemeral on cloud platforms)
