@@ -345,28 +345,20 @@ class GiftCard(db.Model):
             # Grant premium access
             from datetime import timedelta
             
-            print(f"📊 User before redemption: access_type={user.access_type}, expires_at={user.expires_at}")
+            print(f"📊 User before redemption: access_type={user.get_access_type()}, subscription_status={user.subscription_status}, expires_at={user.subscription_end}")
             
-            # If user already has premium access, extend it
-            if user.expires_at and user.expires_at > datetime.utcnow():
-                user.expires_at = user.expires_at + timedelta(days=30 * self.value_months)
-            else:
-                user.expires_at = datetime.utcnow() + timedelta(days=30 * self.value_months)
-            
-            # Update user access type
-            if user.access_type == 'Free':
-                user.access_type = 'Premium Access'
-            
+            # Grant premium access by updating subscription fields
             user.subscription_status = 'active'
-            user.profile_limit = 10
+            user.subscription_start = datetime.utcnow()
+            user.subscription_end = datetime.utcnow() + timedelta(days=30 * self.value_months)
             
-            print(f"📊 User after update: access_type={user.access_type}, expires_at={user.expires_at}")
+            print(f"📊 User after update: access_type={user.get_access_type()}, subscription_status={user.subscription_status}, expires_at={user.subscription_end}")
             print(f"💾 Attempting database commit...")
             
             db.session.commit()
             
             print(f"✅ Gift card {self.code} redeemed successfully!")
-            return True, f"Gift card redeemed! Premium access granted until {user.expires_at.strftime('%B %d, %Y')}"
+            return True, f"Gift card redeemed! Premium access granted until {user.subscription_end.strftime('%B %d, %Y')}"
             
         except Exception as e:
             print(f"❌ Error during gift card redemption: {str(e)}")
