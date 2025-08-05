@@ -118,6 +118,17 @@ curl https://your-app.onrender.com/health
 
 *UsageRecord Model:*
 - Rate limiting and usage analytics tracking
+
+*GiftCard Model:*
+- Teachers Pay Teachers integration for premium access gift cards
+- Secure code generation with XXXX-XXXX-XXXX format using cryptographic randomness
+- Purchase tracking: purchase_source, purchase_id, purchase_email, purchase_date
+- Redemption tracking: redeemed_by_user_id, redeemed_at, redeemed_ip
+- Validation: is_valid() method checks redemption status and expiration
+- Auto-granting: redeem() method automatically extends user premium access
+- Admin methods: to_dict(), get_status_badge() for UI display
+- Relationships: ForeignKey to User with redemption history
+
 - Automatic PostgreSQL detection via `DATABASE_URL` environment variable
 - SQLite fallback for local development
 
@@ -159,6 +170,7 @@ curl https://your-app.onrender.com/health
 - `ADMIN_API_KEY` - API key for admin endpoints
 - `ADMIN_PASSWORD` - Optional additional admin password
 - `ADMIN_IP_WHITELIST` - Optional IP restriction for admin API
+- `TPT_API_KEY` - API key for Teachers Pay Teachers gift card integration
 
 **Annotation Presets** (`annotation_parameters.py`):
 - Predefined parameter sets for different lesson types
@@ -309,6 +321,12 @@ curl https://your-app.onrender.com/health
 - `POST /stripe-webhook` - Stripe webhook endpoint for subscription events
 - `GET /billing-portal` - Stripe billing portal redirect (premium users)
 
+**Gift Card Routes**:
+- `GET /gift-cards/redeem` - Gift card redemption page (login required)
+- `POST /gift-cards/redeem` - Process gift card redemption (login required)
+- `POST /api/gift-cards/validate` - Validate gift card without redeeming (public)
+- `POST /api/gift-cards/generate` - Generate gift card for Teachers Pay Teachers (API key required)
+
 **Admin API Endpoints** (requires admin authentication):
 - `GET /admin` - Admin panel web interface
 - `GET /admin/list-users` - List all users with filtering
@@ -319,6 +337,8 @@ curl https://your-app.onrender.com/health
 - `POST /admin/delete-user` - Delete user accounts with cascade cleanup
 - `GET /admin/feedback` - List all feedback reports with filtering
 - `POST /admin/feedback/<id>` - Update feedback status and admin notes
+- `GET /admin/gift-cards` - List all gift cards with status filtering
+- `POST /admin/gift-cards/generate` - Generate gift cards manually
 - `POST /admin/logout` - Admin logout
 
 ## Recent Updates Summary
@@ -337,4 +357,6 @@ The application has been significantly enhanced with:
 
 6. **Security & Authentication**: Multi-layer admin authentication, comprehensive input validation, admin action logging, and protection against accidental admin user deletion.
 
-The codebase now represents a mature, production-ready lesson plan annotation system with complete user lifecycle management, feedback collection, and comprehensive administrative capabilities.
+7. **Gift Card System**: Complete Teachers Pay Teachers integration with secure gift card generation, redemption workflow, admin management, and automatic premium access granting for monetization through educational marketplaces.
+
+The codebase now represents a mature, production-ready lesson plan annotation system with complete user lifecycle management, feedback collection, comprehensive administrative capabilities, and integrated gift card monetization through Teachers Pay Teachers.
