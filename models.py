@@ -330,39 +330,26 @@ class GiftCard(db.Model):
         """Redeem the gift card for a user."""
         is_valid, message = self.is_valid()
         if not is_valid:
-            print(f"❌ Gift card validation failed: {message}")
             return False, message
         
         try:
-            print(f"🎁 Starting redemption for gift card {self.code} by user {user.username}")
-            
             # Mark as redeemed
             self.is_redeemed = True
             self.redeemed_by_user_id = user.id
             self.redeemed_at = datetime.utcnow()
             self.redeemed_ip = client_ip
             
-            # Grant premium access
-            from datetime import timedelta
-            
-            print(f"📊 User before redemption: access_type={user.get_access_type()}, subscription_status={user.subscription_status}, expires_at={user.subscription_end}")
-            
             # Grant premium access by updating subscription fields
+            from datetime import timedelta
             user.subscription_status = 'active'
             user.subscription_start = datetime.utcnow()
             user.subscription_end = datetime.utcnow() + timedelta(days=30 * self.value_months)
             
-            print(f"📊 User after update: access_type={user.get_access_type()}, subscription_status={user.subscription_status}, expires_at={user.subscription_end}")
-            print(f"💾 Attempting database commit...")
-            
             db.session.commit()
             
-            print(f"✅ Gift card {self.code} redeemed successfully!")
             return True, f"Gift card redeemed! Premium access granted until {user.subscription_end.strftime('%B %d, %Y')}"
             
         except Exception as e:
-            print(f"❌ Error during gift card redemption: {str(e)}")
-            print(f"❌ Exception type: {type(e).__name__}")
             db.session.rollback()
             return False, f"Database error during redemption: {str(e)}"
     
