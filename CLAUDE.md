@@ -227,6 +227,7 @@ python3 test_gift_card_api.py
 
 - **Port Configuration**: App runs on port 5001 by default (changed from 5000 to avoid conflicts)
   - **Note**: README.md still references port 5000 - this is outdated
+- **Gift Card Database Integration**: Gift cards integrate with existing subscription system (subscription_status, subscription_end) rather than separate access_type fields
 - **Database Persistence**: 
   - **Production**: Requires `DATABASE_URL` (PostgreSQL) for persistent storage
   - **Development**: Falls back to SQLite (ephemeral on cloud platforms)
@@ -368,6 +369,6 @@ The application has been significantly enhanced with:
 
 6. **Security & Authentication**: Multi-layer admin authentication, comprehensive input validation, admin action logging, and protection against accidental admin user deletion.
 
-7. **Gift Card System**: Complete Teachers Pay Teachers integration with secure gift card generation, redemption workflow, admin management, and automatic premium access granting for monetization through educational marketplaces.
+7. **Gift Card System**: Complete Teachers Pay Teachers integration with secure gift card generation, redemption workflow, admin management, and automatic premium access granting. **Status: PRODUCTION READY** - gift cards successfully tested and working with existing subscription system.
 
-The codebase now represents a mature, production-ready lesson plan annotation system with complete user lifecycle management, feedback collection, comprehensive administrative capabilities, and integrated gift card monetization through Teachers Pay Teachers.
+The codebase now represents a mature, production-ready lesson plan annotation system with complete user lifecycle management, feedback collection, comprehensive administrative capabilities, and fully operational gift card monetization through Teachers Pay Teachers marketplace integration.
