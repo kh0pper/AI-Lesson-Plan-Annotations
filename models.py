@@ -283,3 +283,119 @@ class FeedbackReport(db.Model):
     
     def __repr__(self):
         return f'<FeedbackReport {self.report_type}: {self.title} by {self.user.username}>'
+
+
+class GiftCard(db.Model):
+    """Model for storing gift card codes and redemption tracking."""
+    
+    __tablename__ = 'gift_cards'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    value_months = db.Column(db.Integer, nullable=False, default=1)  # Premium months
+    is_redeemed = db.Column(db.Boolean, nullable=False, default=False)
+    
+    # Purchase tracking
+    purchase_source = db.Column(db.String(50), nullable=False, default='Teachers Pay Teachers')
+    purchase_id = db.Column(db.String(100))  # External purchase/order ID
+    purchase_email = db.Column(db.String(255))  # Purchaser's email
+    purchase_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    # Redemption tracking
+    redeemed_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    redeemed_at = db.Column(db.DateTime, nullable=True)
+    redeemed_ip = db.Column(db.String(45))  # IP address of redemption
+    
+    # Expiration (optional - gift cards could expire)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notes = db.Column(db.Text)  # Admin notes
+    
+    # Relationships
+    redeemed_by = db.relationship('User', backref=db.backref('redeemed_gift_cards', lazy='dynamic'))
+    
+    def is_valid(self):
+        """Check if gift card is valid for redemption."""
+        if self.is_redeemed:
+            return False, "Gift card has already been redeemed"
+        
+        if self.expires_at and self.expires_at < datetime.utcnow():
+            return False, "Gift card has expired"
+        
+        return True, "Gift card is valid"
+    
+    def redeem(self, user, client_ip=None):
+        """Redeem the gift card for a user."""
+        is_valid, message = self.is_valid()
+        if not is_valid:
+            return False, message
+        
+        # Mark as redeemed
+        self.is_redeemed = True
+        self.redeemed_by_user_id = user.id
+        self.redeemed_at = datetime.utcnow()
+        self.redeemed_ip = client_ip
+        
+        # Grant premium access
+        from datetime import timedelta
+        
+        # If user already has premium access, extend it
+        if user.expires_at and user.expires_at > datetime.utcnow():
+            user.expires_at = user.expires_at + timedelta(days=30 * self.value_months)
+        else:
+            user.expires_at = datetime.utcnow() + timedelta(days=30 * self.value_months)
+        
+        # Update user access type
+        if user.access_type == 'Free':
+            user.access_type = 'Premium Access'
+        
+        user.subscription_status = 'active'
+        user.profile_limit = 10
+        
+        db.session.commit()
+        
+        return True, f"Gift card redeemed! Premium access granted until {user.expires_at.strftime('%B %d, %Y')}"
+    
+    def to_dict(self):
+        """Convert gift card to dictionary for API responses."""
+        return {
+            'id': self.id,
+            'code': self.code,
+            'value_months': self.value_months,
+            'is_redeemed': self.is_redeemed,
+            'purchase_source': self.purchase_source,
+            'purchase_date': self.purchase_date.isoformat() if self.purchase_date else None,
+            'redeemed_at': self.redeemed_at.isoformat() if self.redeemed_at else None,
+            'redeemed_by': self.redeemed_by.username if self.redeemed_by else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'created_at': self.created_at.isoformat()
+        }
+    
+    @staticmethod
+    def generate_code():
+        """Generate a unique gift card code."""
+        import secrets
+        import string
+        
+        # Generate a secure random code (format: XXXX-XXXX-XXXX)
+        chars = string.ascii_uppercase + string.digits
+        while True:
+            code = '-'.join([''.join(secrets.choice(chars) for _ in range(4)) for _ in range(3)])
+            
+            # Ensure code is unique
+            if not GiftCard.query.filter_by(code=code).first():
+                return code
+    
+    def get_status_badge(self):
+        """Get HTML badge for redemption status."""
+        if self.is_redeemed:
+            return '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Redeemed</span>'
+        elif self.expires_at and self.expires_at < datetime.utcnow():
+            return '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Expired</span>'
+        else:
+            return '<span class="badge bg-primary"><i class="fas fa-gift me-1"></i>Active</span>'
+    
+    def __repr__(self):
+        return f'<GiftCard {self.code}: {self.value_months} months, {"Redeemed" if self.is_redeemed else "Active"}>'

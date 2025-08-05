@@ -55,6 +55,9 @@
                             <li><a class="dropdown-item" href="{{ url_for('my_feedback') }}">
                                 <i class="fas fa-comment-alt me-1"></i>My Feedback
                             </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('redeem_gift_card') }}">
+                                <i class="fas fa-gift me-1"></i>Redeem Gift Card
+                            </a></li>
                             {% if current_user.is_premium() %}
                             <li><a class="dropdown-item" href="{{ url_for('billing_portal') }}">
                                 <i class="fas fa-credit-card me-1"></i>Manage Billing

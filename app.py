@@ -10,7 +10,7 @@ import json
 
 from lesson_annotator import LessonPlanAnnotator
 from annotation_parameters import ParameterPresets, AnnotationParameters, parameters_to_dict
-from models import db, User, AnnotationProfile, UsageRecord, FeedbackReport
+from models import db, User, AnnotationProfile, UsageRecord, FeedbackReport, GiftCard
 from forms import RegistrationForm, LoginForm, ProfileForm, FeedbackForm
 from stripe_integration import StripeService, get_stripe_public_key
 
@@ -1202,6 +1202,209 @@ def admin_delete_user():
         db.session.rollback()
         print(f"❌ Error deleting user: {e}")
         return jsonify({'error': 'Failed to delete user'}), 500
+
+
+@app.route('/api/gift-cards/generate', methods=['POST'])
+def generate_gift_card():
+    """API endpoint for Teachers Pay Teachers to generate gift card codes."""
+    
+    # Simple API key authentication for external integrations
+    api_key = request.headers.get('API-Key')
+    expected_key = os.environ.get('TPT_API_KEY', 'tpt-gift-card-key-2025')
+    
+    if api_key != expected_key:
+        return jsonify({'error': 'Invalid API key'}), 401
+    
+    data = request.get_json()
+    
+    # Validate required fields
+    if not data.get('purchase_id'):
+        return jsonify({'error': 'Purchase ID is required'}), 400
+    
+    try:
+        # Generate unique gift card code
+        code = GiftCard.generate_code()
+        
+        # Create gift card record
+        gift_card = GiftCard(
+            code=code,
+            value_months=data.get('value_months', 1),
+            purchase_source='Teachers Pay Teachers',
+            purchase_id=data.get('purchase_id'),
+            purchase_email=data.get('purchase_email'),
+            notes=data.get('notes', 'Generated via Teachers Pay Teachers API')
+        )
+        
+        # Set expiration if provided (optional)
+        if data.get('expires_days'):
+            from datetime import timedelta
+            gift_card.expires_at = datetime.utcnow() + timedelta(days=int(data['expires_days']))
+        
+        db.session.add(gift_card)
+        db.session.commit()
+        
+        # Log the generation
+        print(f"🎁 GIFT CARD GENERATED: {code} for purchase {data.get('purchase_id')} ({data.get('purchase_email')})")
+        
+        return jsonify({
+            'success': True,
+            'gift_card': {
+                'code': code,
+                'value_months': gift_card.value_months,
+                'purchase_id': gift_card.purchase_id,
+                'expires_at': gift_card.expires_at.isoformat() if gift_card.expires_at else None,
+                'created_at': gift_card.created_at.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error generating gift card: {e}")
+        return jsonify({'error': 'Failed to generate gift card'}), 500
+
+
+@app.route('/gift-cards/redeem', methods=['GET', 'POST'])
+@login_required
+def redeem_gift_card():
+    """Gift card redemption page and processing."""
+    
+    if request.method == 'GET':
+        return render_template('redeem_gift_card.html')
+    
+    # Process redemption
+    code = request.form.get('gift_card_code', '').strip().upper()
+    
+    if not code:
+        flash('Please enter a gift card code.', 'error')
+        return render_template('redeem_gift_card.html')
+    
+    try:
+        # Find gift card
+        gift_card = GiftCard.query.filter_by(code=code).first()
+        
+        if not gift_card:
+            flash('Invalid gift card code. Please check your code and try again.', 'error')
+            return render_template('redeem_gift_card.html')
+        
+        # Get client IP
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+        
+        # Attempt redemption
+        success, message = gift_card.redeem(current_user, client_ip)
+        
+        if success:
+            flash(message, 'success')
+            
+            # Log the redemption
+            print(f"🎁 GIFT CARD REDEEMED: {code} by {current_user.username} ({current_user.email}) from IP {client_ip}")
+            
+            return redirect(url_for('index'))
+        else:
+            flash(message, 'error')
+            return render_template('redeem_gift_card.html')
+            
+    except Exception as e:
+        print(f"❌ Error redeeming gift card: {e}")
+        flash('An error occurred while redeeming your gift card. Please try again.', 'error')
+        return render_template('redeem_gift_card.html')
+
+
+@app.route('/api/gift-cards/validate', methods=['POST'])
+def validate_gift_card():
+    """API endpoint to validate a gift card without redeeming it."""
+    
+    data = request.get_json()
+    code = data.get('code', '').strip().upper()
+    
+    if not code:
+        return jsonify({'valid': False, 'message': 'Gift card code is required'})
+    
+    gift_card = GiftCard.query.filter_by(code=code).first()
+    
+    if not gift_card:
+        return jsonify({'valid': False, 'message': 'Invalid gift card code'})
+    
+    is_valid, message = gift_card.is_valid()
+    
+    return jsonify({
+        'valid': is_valid,
+        'message': message,
+        'value_months': gift_card.value_months if is_valid else None,
+        'expires_at': gift_card.expires_at.isoformat() if gift_card.expires_at else None
+    })
+
+
+@app.route('/admin/gift-cards', methods=['GET'])
+def admin_list_gift_cards():
+    """Admin API endpoint to list all gift cards."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    try:
+        gift_cards = GiftCard.query.order_by(GiftCard.created_at.desc()).all()
+        
+        gift_cards_data = []
+        for gc in gift_cards:
+            data = gc.to_dict()
+            data['status'] = 'redeemed' if gc.is_redeemed else ('expired' if gc.expires_at and gc.expires_at < datetime.utcnow() else 'active')
+            gift_cards_data.append(data)
+        
+        return jsonify({
+            'success': True,
+            'gift_cards': gift_cards_data
+        })
+        
+    except Exception as e:
+        print(f"❌ Error listing gift cards: {e}")
+        return jsonify({'error': 'Failed to load gift cards'}), 500
+
+
+@app.route('/admin/gift-cards/generate', methods=['POST'])
+def admin_generate_gift_card():
+    """Admin API endpoint to manually generate gift cards."""
+    
+    if not verify_admin_api_access():
+        return jsonify({'error': 'Unauthorized access'}), 401
+    
+    data = request.get_json()
+    
+    try:
+        # Generate unique gift card code
+        code = GiftCard.generate_code()
+        
+        # Create gift card record
+        gift_card = GiftCard(
+            code=code,
+            value_months=data.get('value_months', 1),
+            purchase_source='Manual',
+            purchase_email=data.get('purchase_email'),
+            notes=data.get('notes', 'Manually generated by admin')
+        )
+        
+        # Set expiration if provided
+        if data.get('expires_days'):
+            from datetime import timedelta
+            gift_card.expires_at = datetime.utcnow() + timedelta(days=int(data['expires_days']))
+        
+        db.session.add(gift_card)
+        db.session.commit()
+        
+        # Log the generation
+        admin_email = current_user.email if current_user.is_authenticated else 'API_CALL'
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+        print(f"🔐 ADMIN ACTION: {admin_email} (IP: {client_ip}) generated gift card: {code}")
+        
+        return jsonify({
+            'success': True,
+            'gift_card': gift_card.to_dict(),
+            'message': f'Gift card {code} generated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error generating gift card: {e}")
+        return jsonify({'error': 'Failed to generate gift card'}), 500
 
 
 def init_database():

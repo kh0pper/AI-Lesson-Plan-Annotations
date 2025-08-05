@@ -36,6 +36,11 @@
                         <i class="fas fa-comment-dots me-1"></i>Feedback & Reports
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="giftcards-tab" data-bs-toggle="tab" data-bs-target="#giftcards" type="button" role="tab">
+                        <i class="fas fa-gift me-1"></i>Gift Cards
+                    </button>
+                </li>
             </ul>
             
             <div class="tab-content" id="adminTabContent">
@@ -285,6 +290,99 @@
                         </div>
                     </div>
                 </div> <!-- End Feedback Tab -->
+                
+                <!-- Gift Cards Tab -->
+                <div class="tab-pane fade" id="giftcards" role="tabpanel">
+                    <!-- Manual Gift Card Generation -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2"></i>Generate Gift Card
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="generateGiftCardForm">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="giftCardMonths" class="form-label">Value (Months)</label>
+                                            <select class="form-control" id="giftCardMonths">
+                                                <option value="1">1 Month</option>
+                                                <option value="3">3 Months</option>
+                                                <option value="6">6 Months</option>
+                                                <option value="12">12 Months</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="giftCardEmail" class="form-label">Purchase Email (Optional)</label>
+                                            <input type="email" class="form-control" id="giftCardEmail" placeholder="purchaser@email.com">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="giftCardExpires" class="form-label">Expires (Days)</label>
+                                            <input type="number" class="form-control" id="giftCardExpires" placeholder="365" value="365">
+                                            <div class="form-text">Leave empty for no expiration</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="giftCardNotes" class="form-label">Notes (Optional)</label>
+                                    <input type="text" class="form-control" id="giftCardNotes" placeholder="Manual generation for...">
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-gift me-2"></i>Generate Gift Card
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Gift Cards List -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>Gift Cards
+                            </h4>
+                            <button class="btn btn-light btn-sm" onclick="loadGiftCards()">
+                                <i class="fas fa-refresh me-1"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Gift Card Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <select class="form-control" id="giftCardStatusFilter" onchange="filterGiftCards()">
+                                        <option value="">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="redeemed">Redeemed</option>
+                                        <option value="expired">Expired</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control" id="giftCardSourceFilter" onchange="filterGiftCards()">
+                                        <option value="">All Sources</option>
+                                        <option value="Teachers Pay Teachers">Teachers Pay Teachers</option>
+                                        <option value="Manual">Manual</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="giftCardSearch" placeholder="Search by code, email, or purchaser..." onkeyup="filterGiftCards()">
+                                </div>
+                            </div>
+                            
+                            <div id="giftCardsList">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading gift cards...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Gift Cards Tab -->
                 
             </div> <!-- End Tab Content -->
 
@@ -924,6 +1022,168 @@ document.getElementById('deleteUserForm').addEventListener('submit', async funct
         }
     } catch (error) {
         showAlert('❌ Network Error', 'Failed to delete user: ' + error.message, 'danger');
+    }
+});
+
+// Gift Card Management Functions
+let allGiftCards = [];
+
+// Generate gift card form handler
+document.getElementById('generateGiftCardForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const valueMonths = parseInt(document.getElementById('giftCardMonths').value);
+    const purchaseEmail = document.getElementById('giftCardEmail').value.trim();
+    const expiresDays = document.getElementById('giftCardExpires').value.trim();
+    const notes = document.getElementById('giftCardNotes').value.trim();
+    
+    try {
+        const response = await fetch('/admin/gift-cards/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': ADMIN_KEY
+            },
+            body: JSON.stringify({
+                value_months: valueMonths,
+                purchase_email: purchaseEmail || null,
+                expires_days: expiresDays ? parseInt(expiresDays) : null,
+                notes: notes || null
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('✅ Success!', 
+                `Gift card generated successfully!<br>
+                <strong>Code: ${result.gift_card.code}</strong><br>
+                Value: ${result.gift_card.value_months} month(s)<br>
+                ${result.gift_card.expires_at ? `Expires: ${new Date(result.gift_card.expires_at).toLocaleDateString()}` : 'No expiration'}`, 
+                'success');
+            document.getElementById('generateGiftCardForm').reset();
+            document.getElementById('giftCardExpires').value = '365';
+            loadGiftCards(); // Refresh gift cards list
+        } else {
+            showAlert('❌ Error', result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Network Error', 'Failed to generate gift card: ' + error.message, 'danger');
+    }
+});
+
+// Load gift cards list
+async function loadGiftCards() {
+    try {
+        const response = await fetch('/admin/gift-cards', {
+            headers: {
+                'Admin-Key': ADMIN_KEY
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.gift_cards) {
+            allGiftCards = result.gift_cards;
+            displayGiftCards(allGiftCards);
+        } else {
+            document.getElementById('giftCardsList').innerHTML = 
+                '<div class="alert alert-danger">Failed to load gift cards: ' + (result.error || 'Unknown error') + '</div>';
+        }
+    } catch (error) {
+        document.getElementById('giftCardsList').innerHTML = 
+            '<div class="alert alert-danger">Network error: ' + error.message + '</div>';
+    }
+}
+
+// Display gift cards in table
+function displayGiftCards(giftCards) {
+    const giftCardsList = document.getElementById('giftCardsList');
+    
+    if (giftCards.length === 0) {
+        giftCardsList.innerHTML = '<div class="alert alert-info">No gift cards found.</div>';
+        return;
+    }
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Value</th>
+                        <th>Status</th>
+                        <th>Source</th>
+                        <th>Created</th>
+                        <th>Redeemed By</th>
+                        <th>Redeemed Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    giftCards.forEach(gc => {
+        const statusBadge = getGiftCardStatusBadge(gc.status);
+        const createdDate = new Date(gc.created_at).toLocaleDateString();
+        const redeemedDate = gc.redeemed_at ? new Date(gc.redeemed_at).toLocaleDateString() : '-';
+        
+        html += `
+            <tr>
+                <td>
+                    <code class="text-primary">${gc.code}</code>
+                    ${gc.expires_at ? `<br><small class="text-muted">Expires: ${new Date(gc.expires_at).toLocaleDateString()}</small>` : ''}
+                </td>
+                <td>${gc.value_months} month${gc.value_months > 1 ? 's' : ''}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <span class="badge ${gc.purchase_source === 'Teachers Pay Teachers' ? 'bg-info' : 'bg-secondary'}">${gc.purchase_source}</span>
+                    ${gc.purchase_email ? `<br><small class="text-muted">${gc.purchase_email}</small>` : ''}
+                </td>
+                <td>${createdDate}</td>
+                <td>${gc.redeemed_by || '-'}</td>
+                <td>${redeemedDate}</td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    giftCardsList.innerHTML = html;
+}
+
+// Filter gift cards
+function filterGiftCards() {
+    const statusFilter = document.getElementById('giftCardStatusFilter').value;
+    const sourceFilter = document.getElementById('giftCardSourceFilter').value;
+    const searchTerm = document.getElementById('giftCardSearch').value.toLowerCase();
+    
+    let filteredGiftCards = allGiftCards.filter(gc => {
+        const matchesStatus = !statusFilter || gc.status === statusFilter;
+        const matchesSource = !sourceFilter || gc.purchase_source === sourceFilter;
+        const matchesSearch = !searchTerm || 
+            gc.code.toLowerCase().includes(searchTerm) ||
+            (gc.purchase_email && gc.purchase_email.toLowerCase().includes(searchTerm)) ||
+            (gc.redeemed_by && gc.redeemed_by.toLowerCase().includes(searchTerm));
+        
+        return matchesStatus && matchesSource && matchesSearch;
+    });
+    
+    displayGiftCards(filteredGiftCards);
+}
+
+// Get status badge for gift cards
+function getGiftCardStatusBadge(status) {
+    const badges = {
+        'active': '<span class="badge bg-primary"><i class="fas fa-gift me-1"></i>Active</span>',
+        'redeemed': '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Redeemed</span>',
+        'expired': '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Expired</span>'
+    };
+    return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
+}
+
+// Load gift cards when tab is shown
+document.getElementById('giftcards-tab').addEventListener('shown.bs.tab', function() {
+    if (allGiftCards.length === 0) {
+        loadGiftCards();
     }
 });
 </script>

@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Redeem Gift Card - AI Lesson Plan Annotator{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-gift me-2"></i>Redeem Gift Card
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-gift text-primary" style="font-size: 4rem;"></i>
+                        <p class="text-muted mt-3">
+                            Enter your gift card code below to redeem one month of premium access
+                        </p>
+                    </div>
+
+                    <form method="POST" id="redeemForm">
+                        <div class="mb-4">
+                            <label for="gift_card_code" class="form-label">
+                                <i class="fas fa-ticket-alt me-2"></i>Gift Card Code
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg text-center" 
+                                   id="gift_card_code" 
+                                   name="gift_card_code" 
+                                   placeholder="XXXX-XXXX-XXXX"
+                                   required
+                                   style="letter-spacing: 2px; font-family: monospace;">
+                            <div class="form-text">
+                                Enter the gift card code exactly as it appears (case insensitive)
+                            </div>
+                        </div>
+
+                        <div id="validationMessage" class="alert" style="display: none;"></div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="redeemBtn">
+                                <i class="fas fa-magic me-2"></i>Redeem Gift Card
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-primary mb-2">
+                            <i class="fas fa-info-circle me-1"></i>What You'll Get:
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li><strong>1 Month Premium Access</strong></li>
+                            <li>10 Custom Annotation Profiles (vs 1 for free)</li>
+                            <li>Unlimited Annotations (vs 5/hour for free)</li>
+                            <li>All PDF Output Formats</li>
+                            <li>Priority Processing</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            Gift cards purchased from Teachers Pay Teachers are valid for redemption.
+                            <br>
+                            Need help? <a href="{{ url_for('feedback') }}">Contact Support</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Annotator
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('gift_card_code').addEventListener('input', function(e) {
+    // Auto-format the input as user types
+    let value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    
+    // Add dashes every 4 characters
+    if (value.length > 4) {
+        value = value.substring(0, 4) + '-' + value.substring(4);
+    }
+    if (value.length > 9) {
+        value = value.substring(0, 9) + '-' + value.substring(9, 13);
+    }
+    
+    e.target.value = value;
+    
+    // Validate as user types (if code is complete)
+    if (value.length === 14) {  // XXXX-XXXX-XXXX format
+        validateGiftCard(value);
+    } else {
+        hideValidationMessage();
+    }
+});
+
+function validateGiftCard(code) {
+    fetch('/api/gift-cards/validate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const messageDiv = document.getElementById('validationMessage');
+        
+        if (data.valid) {
+            messageDiv.className = 'alert alert-success';
+            messageDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Valid Gift Card!</strong> 
+                This gift card is worth ${data.value_months} month${data.value_months > 1 ? 's' : ''} of premium access.
+                ${data.expires_at ? `<br><small>Expires: ${new Date(data.expires_at).toLocaleDateString()}</small>` : ''}
+            `;
+        } else {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Invalid Gift Card:</strong> ${data.message}
+            `;
+        }
+        
+        messageDiv.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Validation error:', error);
+        hideValidationMessage();
+    });
+}
+
+function hideValidationMessage() {
+    const messageDiv = document.getElementById('validationMessage');
+    messageDiv.style.display = 'none';
+}
+
+// Form submission handling
+document.getElementById('redeemForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('redeemBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Redeeming...';
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.alert {
+    border-radius: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #0d6efd, #6610f2);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #0b5ed7, #5a0fc7);
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}
