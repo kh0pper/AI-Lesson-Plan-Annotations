@@ -10,70 +10,34 @@ This is an AI-powered lesson plan annotation web application built with Flask. T
 
 ### Development & Testing
 ```bash
-# Install dependencies (required before first run)
+# Setup (first time)
 pip install -r requirements.txt
-
-# Initialize database (run once after fresh clone)
 python3 init_db.py
 
-# Start the Flask application (will run on port 5001 by default)
-python3 app.py
+# Run application
+python3 app.py                       # Default on port 5001
 
-# Alternative: Start Flask with specific settings
-python3 -m flask --app app run --host=0.0.0.0 --port=8080 --debug
+# Test components
+python3 test_auth_system.py          # Authentication
+python3 test_profiles.py             # Profile management  
+python3 test_webhook.py              # Stripe webhooks
+python3 test_gift_card_api.py        # Gift card integration
 
-# Test specific components
-python3 test_auth_system.py          # Test user authentication
-python3 test_template_render.py      # Test template rendering
-python3 test_profiles.py             # Test profile management
-python3 test_registration.py         # Test user registration
-python3 test_webhook.py              # Test Stripe webhook endpoint
-python3 test_billing_portal.py       # Test Stripe billing portal
-python3 quick_portal_test.py         # Quick Stripe portal validation
-python3 test_gift_card_api.py        # Test Teachers Pay Teachers gift card API integration
-
-# Manual subscription management
-python3 update_subscription.py       # Update user subscription status
-
-# Command line annotation (bypasses web interface)
+# Command line annotation
 python3 lesson_annotator.py
 ```
 
-### Database Management
+### Database & Admin Management
 ```bash
-# Initialize fresh database (creates ai_annotator.db locally, or initializes PostgreSQL tables)
+# Database setup (PostgreSQL in production, SQLite locally)
 python3 init_db.py
 
-# Grant alpha tester access (local database)
-python3 grant_alpha_access.py user@email.com
+# User management
+python3 grant_alpha_access.py user@email.com              # Local
+python3 manage_render_users.py grant URL user@email.com   # Remote
 
-# Manage users on remote Render deployment
-python3 manage_render_users.py list https://your-app.onrender.com
-python3 manage_render_users.py grant https://your-app.onrender.com user@email.com
-
-# No migrations system - database schema changes require manual init_db.py run
-# Production uses PostgreSQL via DATABASE_URL, development uses SQLite fallback
-```
-
-### Deployment
-```bash
-# Deploy to Render (see DEPLOYMENT.md for full guide)
-# 1. Push code to GitHub
-# 2. Connect GitHub repo to Render
-# 3. Set environment variables in Render dashboard
-# 4. Deploy automatically
-
-# Health check endpoint
+# Health check
 curl https://your-app.onrender.com/health
-```
-
-### Gift Card Integration
-```bash
-# Test Teachers Pay Teachers API integration
-python3 test_gift_card_api.py
-
-# See TEACHERS_PAY_TEACHERS_INTEGRATION.md for complete API documentation
-# and integration instructions for marketplace monetization
 ```
 
 ## Architecture Overview
@@ -103,44 +67,12 @@ python3 test_gift_card_api.py
    - `combined_pdf_annotator.py` - Comprehensive multi-format output
 
 **Database Models** (`models.py`):
-
-*User Model:*
-- Authentication: username, email, password_hash with bcrypt
-- Subscription: subscription_status, stripe_customer_id, access_type, expires_at
-- Limits: profile_limit (1 for free, 10 for premium/alpha)
-- Methods: is_premium(), is_alpha_tester(), get_access_type(), check_password()
-
-*AnnotationProfile Model:*
-- Custom user annotation preferences with JSON storage
-- Fields: name, description, is_default, pedagogical_approach, engagement_level
-- Advanced options: assessment_type, differentiation, language_focus, age_group
-- Visual: annotation_theme, custom_category_definitions
-- Relationships: ForeignKey to User with cascade delete
-
-*FeedbackReport Model:*
-- Comprehensive feedback tracking system
-- Core: report_type (bug/feature_request/improvement/other), title, description
-- Management: priority (low/medium/high/critical), status (open/in_progress/resolved/closed)
-- Technical: browser_info, error_details, steps_to_reproduce
-- Admin: admin_notes, resolved_at timestamps
-- Methods: get_type_badge(), get_priority_badge(), get_status_badge() for UI
-- Relationships: ForeignKey to User with cascade delete
-
-*UsageRecord Model:*
-- Rate limiting and usage analytics tracking
-
-*GiftCard Model:*
-- Teachers Pay Teachers integration for premium access gift cards
-- Secure code generation with XXXX-XXXX-XXXX format using cryptographic randomness
-- Purchase tracking: purchase_source, purchase_id, purchase_email, purchase_date
-- Redemption tracking: redeemed_by_user_id, redeemed_at, redeemed_ip
-- Validation: is_valid() method checks redemption status and expiration
-- Auto-granting: redeem() method automatically extends user premium access
-- Admin methods: to_dict(), get_status_badge() for UI display
-- Relationships: ForeignKey to User with redemption history
-
-- Automatic PostgreSQL detection via `DATABASE_URL` environment variable
-- SQLite fallback for local development
+- **User**: Authentication, subscriptions, password recovery, access levels (free/premium/alpha)
+- **AnnotationProfile**: Custom user annotation preferences stored as JSON
+- **FeedbackReport**: Bug reports and feature requests with admin management
+- **GiftCard**: Teachers Pay Teachers integration with secure redemption codes
+- **UsageRecord**: Rate limiting and analytics tracking
+- Auto-detects PostgreSQL (production) vs SQLite (development) via `DATABASE_URL`
 
 **Subscription System** (`stripe_integration.py`):
 - Stripe webhook handling for subscription lifecycle
@@ -169,22 +101,18 @@ python3 test_gift_card_api.py
 - Browser information capture for debugging purposes
 - Comprehensive admin notes system for feedback resolution tracking
 
+**Password Recovery System** (`forms.py`, password reset routes in `app.py`):
+- PasswordResetRequestForm: Email-based password reset request
+- PasswordResetForm: Secure new password setting with confirmation
+- Token-based recovery with 1-hour expiration
+- Protection against email enumeration attacks
+- Ready for email integration (currently shows reset URLs for testing)
+
 ### Configuration
 
-**Environment Variables** (`.env`):
-- `LLAMA_API_KEY` - Required for AI functionality (format: `LLM|userid|apikey`)
-- `DATABASE_URL` - PostgreSQL connection string for persistent storage (production)
-- `STRIPE_*` keys - Required for subscription features
-- `FLASK_SECRET_KEY` - Session management
-- `ADMIN_EMAILS` - Comma-separated admin email whitelist
-- `ADMIN_API_KEY` - API key for admin endpoints
-- `ADMIN_PASSWORD` - Optional additional admin password
-- `ADMIN_IP_WHITELIST` - Optional IP restriction for admin API
-- `TPT_API_KEY` - API key for Teachers Pay Teachers gift card integration
-
-**Annotation Presets** (`annotation_parameters.py`):
-- Predefined parameter sets for different lesson types
-- Extensible system for custom annotation guidelines
+**Configuration**:
+- **Environment Variables**: `LLAMA_API_KEY`, `DATABASE_URL`, `STRIPE_*`, `ADMIN_EMAILS`, `TPT_API_KEY`
+- **Annotation Presets**: Predefined parameters in `annotation_parameters.py`
 
 ## Important Implementation Details
 
@@ -223,29 +151,16 @@ python3 test_gift_card_api.py
 - Demo mode removed - requires real API key to function
 - Clear error messages guide users to obtain proper credentials
 
-## Critical Notes
+## Critical Implementation Notes
 
-- **Port Configuration**: App runs on port 5001 by default (changed from 5000 to avoid conflicts)
-  - **Note**: README.md still references port 5000 - this is outdated
-- **Gift Card Database Integration**: Gift cards integrate with existing subscription system (subscription_status, subscription_end) rather than separate access_type fields
-- **Database Persistence**: 
-  - **Production**: Requires `DATABASE_URL` (PostgreSQL) for persistent storage
-  - **Development**: Falls back to SQLite (ephemeral on cloud platforms)
-  - No migration system - schema changes require `init_db.py`
-- **Authentication Required**: Anonymous users see landing page, must login to access tools
-- **Admin Panel Security**:
-  - Multi-layer authentication: user login + admin email whitelist + optional password
-  - Access via `/admin` route requires `ADMIN_EMAILS` environment variable
-  - API endpoints secured with `ADMIN_API_KEY` header authentication
-  - All admin actions logged with user and IP tracking
-- **Stripe Configuration**: 
-  - Webhooks must be configured at `/stripe-webhook` endpoint in production
-  - Customer Portal must be configured in Stripe Dashboard before billing management works
-  - Test/Live mode API keys must match customer data (test customers need test keys, live customers need live keys)
-- **Processing**: All PDF processing is synchronous - consider async for large files
-- **Profile Storage**: User profiles store JSON data for annotation parameters
-- **Rate Limiting**: Uses in-memory storage - not suitable for multi-instance deployment
-- **API Keys**: Real Llama API key required - demo mode has been removed
+- **Port**: Runs on 5001 (not 5000 as documented in README.md)
+- **Database**: PostgreSQL (production) via `DATABASE_URL`, SQLite (development), no migrations
+- **Authentication**: Landing page for anonymous users, login required for annotation tools
+- **Admin Security**: Multi-layer auth (login + `ADMIN_EMAILS` whitelist + optional password)
+- **Stripe Setup**: Requires webhook at `/stripe-webhook` and Customer Portal configuration
+- **Rate Limiting**: In-memory storage (not suitable for multi-instance deployment)
+- **Processing**: Synchronous PDF processing (consider async for large files)
+- **API Keys**: Real `LLAMA_API_KEY` required (demo mode removed)
 
 ## Stripe Integration Troubleshooting
 
@@ -261,57 +176,11 @@ python3 test_gift_card_api.py
 3. Subscribe to events: `customer.subscription.*`, `invoice.payment.*`
 4. Ensure live mode keys are used for production deployment
 
-## Development Notes
+## UI Architecture
 
-- Flask app automatically creates database tables on startup via `init_database()`
-- Database URL detection: PostgreSQL for production (`DATABASE_URL`), SQLite for development
-- Test files available for major components (auth, profiles, templates, registration)
-- Landing page template provides comprehensive marketing/onboarding experience
-- User authentication integrated throughout with Flask-Login session management
-- Admin panel provides user management with search/filter capabilities
-- Alpha tester system allows premium access without Stripe subscriptions
-
-## Alpha Tester Management
-
-**Grant Alpha Access**:
-- Web Interface: `/admin` (requires admin authentication)
-- Local Script: `python3 grant_alpha_access.py user@email.com`
-- Remote API: `python3 manage_render_users.py grant https://app.onrender.com user@email.com`
-
-**Alpha Tester Benefits**:
-- 10 profile limit (vs 1 for free users)
-- Unlimited annotations (vs 5/hour for free users)
-- "Alpha Tester" badge in navigation
-- No Stripe subscription required
-
-**Admin Requirements**:
-- Must set `ADMIN_EMAILS` environment variable
-- Must be logged in as whitelisted admin user
-- Optional: `ADMIN_PASSWORD` for additional security layer
-
-## Template Structure
-
-**Base Template** (`templates/base.html`):
-- Bootstrap 5 responsive design with Font Awesome icons
-- Navigation includes authenticated user menu with access badges
-- Feedback link in main navigation for logged-in users
-- User dropdown with "My Feedback" access and billing management
-- Copyright updated to 2025
-
-**Main Pages**:
-- `templates/index.html` - Primary upload interface with comprehensive form options
-- `templates/landing.html` - Marketing page for anonymous users
-- `templates/feedback.html` - Feedback submission form with dynamic sections
-- `templates/my_feedback.html` - User feedback history with status cards
-- `templates/admin.html` - Tabbed admin interface (User Management + Feedback)
-
-**Key UI Features**:
-- Responsive card-based design with hover effects
-- Dynamic form sections that show/hide based on selections
-- Visual status badges for feedback reports and user access levels
-- Bootstrap modal dialogs for admin actions
-- Real-time search and filtering without page refresh
-- Professional styling with consistent color schemes
+**Frontend**: Bootstrap 5 with responsive design, dynamic forms, real-time filtering
+**Templates**: Landing page, authentication flow, admin panel, feedback system
+**Key Features**: Multi-format PDF upload, profile management, subscription billing portal
 
 ## API Endpoints
 
@@ -326,6 +195,8 @@ python3 test_gift_card_api.py
 - `GET/POST /login` - User authentication
 - `GET/POST /register` - User registration
 - `GET /logout` - User logout
+- `GET/POST /reset-password` - Password reset request form
+- `GET/POST /reset-password/<token>` - Password reset completion with token
 
 **Subscription Routes**:
 - `GET /donate` - Stripe subscription page
@@ -353,22 +224,12 @@ python3 test_gift_card_api.py
 - `POST /admin/gift-cards/generate` - Generate gift cards manually
 - `POST /admin/logout` - Admin logout
 
-## Recent Updates Summary
+## Production Status
 
-The application has been significantly enhanced with:
-
-1. **Complete User Account Management**: Admins can now create new user accounts, reset passwords, and delete accounts through the admin panel with comprehensive validation, safety confirmations, and audit logging.
-
-2. **Comprehensive Feedback System**: Users can submit bug reports, feature requests, and improvement suggestions through a dedicated form with dynamic fields, priority levels, and technical details capture.
-
-3. **Enhanced Admin Panel**: Multi-tabbed interface combining user management and feedback management with real-time filtering, search capabilities, quick action buttons, and comprehensive admin tools.
-
-4. **Improved User Experience**: Updated navigation with feedback links, visual status indicators, responsive design improvements, and intuitive card-based interfaces throughout the application.
-
-5. **Database Architecture**: Added FeedbackReport model with full relationship mapping and cascade delete functionality for data integrity.
-
-6. **Security & Authentication**: Multi-layer admin authentication, comprehensive input validation, admin action logging, and protection against accidental admin user deletion.
-
-7. **Gift Card System**: Complete Teachers Pay Teachers integration with secure gift card generation, redemption workflow, admin management, and automatic premium access granting. **Status: PRODUCTION READY** - gift cards successfully tested and working with existing subscription system.
-
-The codebase now represents a mature, production-ready lesson plan annotation system with complete user lifecycle management, feedback collection, comprehensive administrative capabilities, and fully operational gift card monetization through Teachers Pay Teachers marketplace integration.
+**PRODUCTION READY** - Complete lesson plan annotation system with:
+- User lifecycle management (registration, authentication, password recovery)
+- Stripe subscription system with billing portal
+- Teachers Pay Teachers gift card integration (tested and operational)
+- Multi-format PDF annotation pipeline with AI integration
+- Comprehensive admin panel with feedback management
+- Rate limiting and usage analytics
