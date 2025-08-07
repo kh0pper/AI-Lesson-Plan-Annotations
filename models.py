@@ -4,6 +4,7 @@ Database models for user authentication and annotation profiles.
 """
 
 import json
+import secrets
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
@@ -29,6 +30,10 @@ class User(UserMixin, db.Model):
     subscription_start = db.Column(db.DateTime)
     subscription_end = db.Column(db.DateTime)
     last_payment = db.Column(db.DateTime)
+    
+    # Password reset fields
+    reset_token = db.Column(db.String(100))
+    reset_token_expires = db.Column(db.DateTime)
     
     # Relationships
     annotation_profiles = db.relationship('AnnotationProfile', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -99,6 +104,27 @@ class User(UserMixin, db.Model):
         if not self.subscription_end:
             return "Never"
         return self.subscription_end.strftime('%B %d, %Y')
+    
+    def generate_reset_token(self):
+        """Generate a secure password reset token."""
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        return self.reset_token
+    
+    def verify_reset_token(self, token):
+        """Verify if the reset token is valid and not expired."""
+        if not self.reset_token or not self.reset_token_expires:
+            return False
+        if self.reset_token != token:
+            return False
+        if datetime.utcnow() > self.reset_token_expires:
+            return False
+        return True
+    
+    def clear_reset_token(self):
+        """Clear the reset token after use."""
+        self.reset_token = None
+        self.reset_token_expires = None
     
     def __repr__(self):
         return f'<User {self.username}>'

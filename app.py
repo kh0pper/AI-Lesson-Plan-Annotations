@@ -11,7 +11,7 @@ import json
 from lesson_annotator import LessonPlanAnnotator
 from annotation_parameters import ParameterPresets, AnnotationParameters, parameters_to_dict
 from models import db, User, AnnotationProfile, UsageRecord, FeedbackReport, GiftCard
-from forms import RegistrationForm, LoginForm, ProfileForm, FeedbackForm
+from forms import RegistrationForm, LoginForm, ProfileForm, FeedbackForm, PasswordResetRequestForm, PasswordResetForm
 from stripe_integration import StripeService, get_stripe_public_key
 
 app = Flask(__name__)
@@ -386,6 +386,55 @@ def logout():
     logout_user()
     flash('You have been logged out.')
     return redirect(url_for('index'))
+
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password_request():
+    """Request password reset."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = PasswordResetRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            token = user.generate_reset_token()
+            db.session.commit()
+            
+            # In a real application, you would send an email here
+            # For now, we'll just show the reset URL in the flash message
+            reset_url = url_for('reset_password', token=token, _external=True)
+            flash(f'Password reset instructions have been sent to your email. '
+                  f'For testing: {reset_url}', 'info')
+        else:
+            # Don't reveal if email exists for security
+            flash('If that email address is in our system, you will receive password reset instructions.', 'info')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password_request.html', form=form)
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    user = User.query.filter_by(reset_token=token).first()
+    if not user or not user.verify_reset_token(token):
+        flash('Invalid or expired password reset link.', 'error')
+        return redirect(url_for('reset_password_request'))
+    
+    form = PasswordResetForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        user.clear_reset_token()
+        db.session.commit()
+        flash('Your password has been reset successfully. You can now log in.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', form=form)
 
 
 # Profile Management Routes

@@ -66,6 +66,30 @@ class ProfileForm(FlaskForm):
     submit = SubmitField('Save Profile')
 
 
+class PasswordResetRequestForm(FlaskForm):
+    """Password reset request form."""
+    
+    email = StringField('Email', validators=[
+        DataRequired(),
+        Email(message="Please enter a valid email address")
+    ])
+    submit = SubmitField('Send Reset Link')
+
+
+class PasswordResetForm(FlaskForm):
+    """Password reset form."""
+    
+    password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=6, message="Password must be at least 6 characters long")
+    ])
+    password2 = PasswordField('Confirm New Password', validators=[
+        DataRequired(),
+        EqualTo('password', message="Passwords must match")
+    ])
+    submit = SubmitField('Reset Password')
+
+
 class FeedbackForm(FlaskForm):
     """Feedback and bug report form."""
     
